@@ -13,8 +13,16 @@ UV space runs 0 - 1 on each axis:
 The GPU interpolates between the UV coords across a triangle so the whole image stretches smoothly across
 the face. I would define UV's per vertex and the GPU stretches the image between the surface between them.
 
+
 To generate a placeholder checker texture:
 
 magick -size 512x512 pattern:checkerboard -auto-level -colorspace sRGB +level-colors "#9BC9D0","#F0EDE6" checker.png
 
 and just change the hexcodes for the colour
+
+
+GL doesnt understand pngs etc so we use stb_image to convert pngs to raw RGB(A) hex.
+
+
+Mipmaps are pre-shrunk versions of textures, kinda like LODS that stop shimmering/antialiasing when viewing a texture
+from far away
