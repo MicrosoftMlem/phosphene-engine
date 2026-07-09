@@ -1,6 +1,10 @@
 #include <glad/glad.h> //glad has to be included before glfw3 bc glfw3 will try use glad so glad has to be defined
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp> //the core types like mat4, vec3
+#include <glm/gtc/matrix_transform.hpp> //the builders translate, rotate, scale
+#include <glm/gtc/type_ptr.hpp> // a bridge to give glms matrix to OpenGL
 #include <iostream>
+#include "Shader.h"
 
 /*
 when we are telling the gpu to do stuff we have 2 things:
@@ -10,34 +14,77 @@ when we are telling the gpu to do stuff we have 2 things:
 
 when we want coordinates, atleast for now we use NDC - Normalised Device Coordinates.
 - as in the name, its normalised, so -1.0 to 1.0
-- later on we can map this to real coords
+- later on we can map this to real coords (GL still uses NDC, we can just use real coords at a higher level. like a wrapper.)
 */
 
-// the 2 below consts are not C++, theyre GLSL (shaders). The R"()" is c++ syntax for a multiline string. you can see from char*
-// that these are literally strings as we cant just type GLSL in a .cpp file.
-//vertex shaders are applied per vertex
-const char* vertexShaderSource = R"(
-#version 330 core
-layout (location = 0) in vec3 aPos;
-void main() {
-    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+//GL will call this every time the window is resized and will pass the args
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    glViewport(0, 0, width, height); //tells GL to render into this whole area
 }
-)";
-//#version 330 core matches our GL version 3.3 core context
-// layout (location = 0) in vec3 aPos; means 'expect an input in slot 0, a vec3, and call it aPos. Slot 0 is the hook the VAO goes into. slot 0 is important
-//gl_Position is the 'final position' its the one thing a vertex shader HAS to set. 1.0 is w is perspective. we dont need that yet
 
-//fragment shaders are applied per pixel in the shape. so like the filled color of a shape between the vertexes
-const char* fragmentShaderSource = R"(
-#version 330 core
-out vec4 FragColor;
-void main() {
-    FragColor = vec4(1.0, 0.5, 0.2, 1.0);
+
+void processInput(GLFWwindow* window, glm::vec3& cameraPos, glm::vec3 cameraFront, glm::vec3 cameraUp) { //we use & so we get a reference which means when we
+                                                                                                            //modify cameraPos, we change the value in main,
+                                                                                                            //not a copy. we dont use & for Front and Up
+                                                                                                            //bc they are only ever read, not changed
+    float speed = 0.05f;
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){ //polls if W is held down
+        cameraPos += speed * cameraFront;
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
+        cameraPos -= speed * cameraFront;
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * speed; //the direction perpedicular to front and up = right (and left if negative)
+                                                                                // we normalise it bc otherwise strafe speed would change based on angles 
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * speed;
+    }
 }
-)";
-//out vec4 FragColor; is its 1 output, the color
-//currently we hardcode it orange (the vec4)
 
+float yaw = -90.0f; //0 points down +x so -90 points down -z
+float pitch = 0.0f;
+float lastX = 400.0f; //the mouse position last frame
+float lastY = 300.0f;
+bool firstMouse = true; //a flag to handle the very first mouse event cleanly
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f); //make camera look forward
+
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    if (firstMouse) { //stop the mouse from jumping at startup bc the cursor could be anywhere
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX; //how far mouse has moved horizontally since last frame
+    float yoffset = lastY - ypos; //reversed: y goes from bottom to top as screen y increases DOWNWARD //how far the mouse has moved vertically since last frame
+    lastX = xpos;
+    lastY = ypos;
+
+    float sensitivity = 0.1f;
+    xoffset *= sensitivity; //raw mouse movement is to fast so scale it down
+    yoffset *= sensitivity;
+
+    yaw += xoffset; //accumulate the angles
+    pitch += yoffset;
+
+    if (pitch > 89.0f) { //clamp the pitch to stop you from looking past straight up
+        pitch = 89.0f;
+    }
+    if (pitch < -89.0f) {
+        pitch = -89.0f;
+    }
+
+    glm::vec3 direction; //this math somehow converts angles into direction vectors
+    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.y = sin(glm::radians(pitch));
+    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(direction);
+
+}
 
 int main() {
     glfwInit(); //starts the library
@@ -49,7 +96,7 @@ int main() {
 
     GLFWwindow* window = glfwCreateWindow(800, 600, "Phosphene Engine", nullptr, nullptr); //width, height, title, fullscreen-monitor, window_sharing (idk)
     if (window == nullptr) { //above statement returns null if failed, pointer if succeeded.
-        std::cout << "Failed to create window\n" << std::endl;
+        std::cout << "Failed to create window\n";
         glfwTerminate();
         return -1;
     }
@@ -57,33 +104,67 @@ int main() {
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) { //glad goes and fetches the function pointers. it asks glfw where they are // INIT GLAD
                                                                 // so glfw context has to be set by now (line 17). also must be before any gl call.
-        std::cout << "Failed to init glad\n" << std::endl;
+        std::cout << "Failed to init glad\n";
         return -1;
     }
 
+    //remember to write an MD on this
+    //write about A, B, C and adding D
+    float vertices[] = { //cube vertices in local space (the cubes shape defined around its own origin)
 
-    //the glCreateShader calls return an int, an ID. OpenGL gives us integer handles to objects it handles internally. we always use the ID
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER); //create a shader object
-    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr); //give it the source
-    glCompileShader(vertexShader); //compile it
+        // BACK
+        -0.5, -0.5, -0.5, //back triangle A
+        0.5, -0.5, -0.5,
+        0.5, 0.5, -0.5,
 
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER); //same as before but for our fragment shader
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
-    glCompileShader(fragmentShader);
+        -0.5, -0.5, -0.5, //back triangle B
+        0.5, 0.5, -0.5,
+        -0.5, 0.5, -0.5,
 
-    unsigned int shaderProgram = glCreateProgram(); //create a 'Program'
-    glAttachShader(shaderProgram, vertexShader); //stages the shaders for attaching linking into program. doesnt actually link it yet
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram); //link the stages shaders above.
+        // FRONT
+        -0.5, -0.5, 0.5, //front trangle A
+        0.5, -0.5, 0.5,
+        0.5, 0.5, 0.5,
 
-    glDeleteShader(vertexShader); //after we link we dont need the individiual shader objects so we can delete them
-    glDeleteShader(fragmentShader);
+        -0.5, -0.5, 0.5, //front trangle B
+        0.5, 0.5, 0.5,
+        -0.5, 0.5, 0.5,
 
+        // LEFT
+        -0.5, -0.5, -0.5, //A //left triangle A
+        -0.5, -0.5, 0.5,  //B
+        -0.5, 0.5, 0.5,   //C
 
-    float vertices[] = { //coordinates in NDC - Normalised Device Coordinates (read top)
-        -0.5f, -0.5f, 0.0f, //the 3 vertices of my triangle.
-        0.5f, -0.5f, 0.0f,
-        0.0f, 0.5f, 0.0f
+        -0.5, -0.5, -0.5, //A //left triangle B
+        -0.5, 0.5, 0.5,   //C
+        -0.5, 0.5, -0.5,  //D
+        
+        // RIGHT
+        0.5, -0.5, -0.5, //A //right triangle A
+        0.5, -0.5, 0.5,  //B
+        0.5, 0.5, 0.5,   //C
+
+        0.5, -0.5, -0.5, //A //right triangle B
+        0.5, 0.5, 0.5,   //C
+        0.5, 0.5, -0.5,  //D
+
+        // BOTTOM
+        -0.5, -0.5, -0.5, //A //bottom triangle A
+        -0.5, -0.5, 0.5,  //B
+        0.5, -0.5, 0.5,   //C
+
+        -0.5, -0.5, -0.5, //A //bottom triangle B
+        0.5, -0.5, 0.5,   //C
+        0.5, -0.5, -0.5,  //D
+
+        //TOP
+        -0.5, 0.5, -0.5, //top triangle A
+        -0.5, 0.5, 0.5,
+        0.5, 0.5, 0.5,
+
+        -0.5, 0.5, -0.5, //top triangle B
+        0.5, 0.5, 0.5,
+        0.5, 0.5, -0.5,
     };
 
     unsigned int VAO, VBO; //create the VAO and VBO
@@ -106,17 +187,57 @@ int main() {
     glEnableVertexAttribArray(0); //turn slot 0 on bc its off by default.
 
 
+    Shader shader("basic.vert", "basic.frag");
 
+
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); //tell GLFW to call that func when the window resizes
+    glfwSetCursorPosCallback(window, mouse_callback);
+
+    glEnable(GL_DEPTH_TEST); //enable depth testing
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //hides cursor and locks it so it wont come out window when doing camera moving w/ mouse
+
+
+    //we setup the camera outside the main loop bc camera pos values etc should persist between frames
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f); //move the camera 3 forwards so we can see the cube at 0,0,0
+    //cameraFront is now declared outside main()
+    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f); //world up
 
 
     while (!glfwWindowShouldClose(window)) {
+        processInput(window, cameraPos, cameraFront, cameraUp); //process/poll input in my own callback
+
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f); //sets what colour to wipe the screen to (teal). doesnt draw yet
-        glClear(GL_COLOR_BUFFER_BIT); //actually wipes screen with above set color. every frame starts with this to cover previous frame.
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //color buffer actually wipes screen with above set color. every frame starts with this to cover previous frame. and depth buffer also tells it to clear the depth buffer
+        //since GL_COLOR_BUFFER_BIT and GL_DEPTH_BUFFER_BIT are bit flags, we can combine them with |
 
         // every frame:
-        glUseProgram(shaderProgram); //activate the shader program,
+        shader.use();
+
+        int w, h;
+        glfwGetFramebufferSize(window, &w, &h); //set w and h to the width and height of the window
+        float aspect = (float)w / (float)h;
+
+
+        glm::mat4 model = glm::mat4(1.0f); //identity
+        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f)); //rotate over time (0.5 on x and 1 on y so its a tilted axis kinda thing)
+
+        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); //make the camera be at right pos and look in right dir
+
+        glm::mat4 projection; //identity
+        projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f); //fov = 45, aspect ratio = 800/600, near clip plane = 0.1f (close than this isnt drawn),
+                                                                                            // far clip plane 100.0f (further than this isnt drawn)
+
+        int modelLoc = glGetUniformLocation(shader.ID, "model");
+        int viewLoc = glGetUniformLocation(shader.ID, "view");
+        int projLoc = glGetUniformLocation(shader.ID, "projection");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+
         glBindVertexArray(VAO); //bind the VAO (replay the recipe)
-        glDrawArrays(GL_TRIANGLES, 0, 3); //and draw triangles, starting at vertex 0, using 3 vertices which is my one triangle
+        glDrawArrays(GL_TRIANGLES, 0, 36); //and draw triangles, starting at vertex 0, using 36 vertices which is my cube (vertex count will have to be updated with changes)
 
 
         glfwSwapBuffers(window); //swaps a back buffer ontop which should have game frame drawn to. back buffers reduce tearing etc

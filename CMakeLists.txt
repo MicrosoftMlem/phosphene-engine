@@ -15,10 +15,18 @@ find_package(OpenGL REQUIRED)
 add_library(glad STATIC vendor/glad/src/glad.c) #static == baked into final exe
 target_include_directories(glad PUBLIC vendor/glad/include) #public == anything that links glad also gets this include path
 
+
+# engine:
+add_library(engine STATIC engine/src/Shader.cpp) #compile engine files into libengine.a
+target_include_directories(engine PUBLIC engine/include) #public == anything that links engine also gets this include path
+target_link_libraries(engine PUBLIC glad) #engine needs glad
+
+#final step:
+
 # 'game' is an executable build from main.cpp
 add_executable(game game/src/main.cpp)
-
 # connect the game to everything it needs
-target_link_libraries(game PRIVATE glad glfw OpenGL::GL glm::glm) #the game needs: glad (GL loader), glfw (window), Open::GL (the actual GL lib),
+target_link_libraries(game PRIVATE engine glfw OpenGL::GL glm::glm) #the game needs: glad (GL loader), Open::GL (the actual GL lib),
                                                                         # glm::glm (math)
+                                                                        # engine (for engine). engine includes glad so glad will be linked aswell
                                                                         # private == the game uses these but doesn't 're-expose' them
