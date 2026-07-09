@@ -26,3 +26,19 @@ GL doesnt understand pngs etc so we use stb_image to convert pngs to raw RGB(A) 
 
 Mipmaps are pre-shrunk versions of textures, kinda like LODS that stop shimmering/antialiasing when viewing a texture
 from far away
+
+To add UV coords we have to add it to the vertex data and then update the VAO layout.
+A vertex already has 3 floats, x/y/z
+so we add 2UV floats per vertex (x/y)
+
+So for a face, the vertex thats visually bottom left gets UV coord (0,0) etc
+
+If all shapes follow the same A, B, C, D pattern we can follow the rule:
+
+A = 0,0
+B = 1,0
+C = 1,1
+then triangle 2:
+A = 0,0
+C = 1,1
+D = 0,1

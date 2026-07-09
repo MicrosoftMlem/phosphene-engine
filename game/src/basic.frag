@@ -1,6 +1,8 @@
 #version 330 core
 out vec4 FragColor;
-in vec3 vColor; //take a vec3 as an input which we will use to set the colour
+in vec2 TexCoord;
+uniform sampler2D ourTexture;
+//sampler2D is a uniform type which is a handle to a texture unit
 void main() {
-    FragColor = vec4(vColor, 1.0);
+    FragColor = texture(ourTexture, TexCoord); //maps ourTexture to the UV coords from TexCoord
 }

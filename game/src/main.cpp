@@ -5,6 +5,7 @@
 #include <glm/gtc/type_ptr.hpp> // a bridge to give glms matrix to OpenGL
 #include <iostream>
 #include "Shader.h"
+#include "Texture.h"
 
 /*
 when we are telling the gpu to do stuff we have 2 things:
@@ -116,58 +117,58 @@ int main() {
     float vertices[] = { //cube vertices in local space (the cubes shape defined around its own origin)
 
         // BACK
-        -0.5, -0.5, -0.5, //back triangle A
-        0.5, -0.5, -0.5,
-        0.5, 0.5, -0.5,
+        -0.5, -0.5, -0.5, 0.0, 0.0, //back triangle A
+        0.5, -0.5, -0.5, 1.0, 0.0,
+        0.5, 0.5, -0.5, 1.0, 1.0,
 
-        -0.5, -0.5, -0.5, //back triangle B
-        0.5, 0.5, -0.5,
-        -0.5, 0.5, -0.5,
+        -0.5, -0.5, -0.5, 0.0, 0.0, //back triangle B
+        0.5, 0.5, -0.5, 1.0, 1.0,
+        -0.5, 0.5, -0.5, 0.0, 1.0,
 
         // FRONT
-        -0.5, -0.5, 0.5, //front trangle A
-        0.5, -0.5, 0.5,
-        0.5, 0.5, 0.5,
+        -0.5, -0.5, 0.5, 0.0, 0.0, //front trangle A
+        0.5, -0.5, 0.5, 1.0, 0.0,
+        0.5, 0.5, 0.5, 1.0, 1.0,
 
-        -0.5, -0.5, 0.5, //front trangle B
-        0.5, 0.5, 0.5,
-        -0.5, 0.5, 0.5,
+        -0.5, -0.5, 0.5, 0.0, 0.0, //front trangle B
+        0.5, 0.5, 0.5, 1.0, 1.0,
+        -0.5, 0.5, 0.5, 0.0, 1.0,
 
         // LEFT
-        -0.5, -0.5, -0.5, //A //left triangle A
-        -0.5, -0.5, 0.5,  //B
-        -0.5, 0.5, 0.5,   //C
+        -0.5, -0.5, -0.5, 0.0, 0.0, //A //left triangle A
+        -0.5, -0.5, 0.5, 1.0, 0.0, //B
+        -0.5, 0.5, 0.5, 1.0, 1.0,  //C
 
-        -0.5, -0.5, -0.5, //A //left triangle B
-        -0.5, 0.5, 0.5,   //C
-        -0.5, 0.5, -0.5,  //D
+        -0.5, -0.5, -0.5, 0.0, 0.0, //A //left triangle B
+        -0.5, 0.5, 0.5, 1.0, 1.0, //C
+        -0.5, 0.5, -0.5, 0.0, 1.0, //D
         
         // RIGHT
-        0.5, -0.5, -0.5, //A //right triangle A
-        0.5, -0.5, 0.5,  //B
-        0.5, 0.5, 0.5,   //C
+        0.5, -0.5, -0.5, 0.0, 0.0, //A //right triangle A
+        0.5, -0.5, 0.5, 1.0, 0.0,  //B
+        0.5, 0.5, 0.5, 1.0, 1.0,   //C
 
-        0.5, -0.5, -0.5, //A //right triangle B
-        0.5, 0.5, 0.5,   //C
-        0.5, 0.5, -0.5,  //D
+        0.5, -0.5, -0.5, 0.0, 0.0, //A //right triangle B
+        0.5, 0.5, 0.5, 1.0, 1.0,   //C
+        0.5, 0.5, -0.5, 0.0, 1.0,  //D
 
         // BOTTOM
-        -0.5, -0.5, -0.5, //A //bottom triangle A
-        -0.5, -0.5, 0.5,  //B
-        0.5, -0.5, 0.5,   //C
+        -0.5, -0.5, -0.5, 0.0, 0.0, //A //bottom triangle A
+        -0.5, -0.5, 0.5, 1.0, 0.0,  //B
+        0.5, -0.5, 0.5, 1.0, 1.0,   //C
 
-        -0.5, -0.5, -0.5, //A //bottom triangle B
-        0.5, -0.5, 0.5,   //C
-        0.5, -0.5, -0.5,  //D
+        -0.5, -0.5, -0.5, 0.0, 0.0, //A //bottom triangle B
+        0.5, -0.5, 0.5, 1.0, 1.0,   //C
+        0.5, -0.5, -0.5, 0.0, 1.0,  //D
 
         //TOP
-        -0.5, 0.5, -0.5, //top triangle A
-        -0.5, 0.5, 0.5,
-        0.5, 0.5, 0.5,
+        -0.5, 0.5, -0.5, 0.0, 0.0, //top triangle A
+        -0.5, 0.5, 0.5, 1.0, 0.0,
+        0.5, 0.5, 0.5, 1.0, 1.0,
 
-        -0.5, 0.5, -0.5, //top triangle B
-        0.5, 0.5, 0.5,
-        0.5, 0.5, -0.5,
+        -0.5, 0.5, -0.5, 0.0, 0.0, //top triangle B
+        0.5, 0.5, 0.5, 1.0, 1.0,
+        0.5, 0.5, -0.5, 0.0, 1.0,
     };
 
     unsigned int VAO, VBO; //create the VAO and VBO
@@ -184,13 +185,21 @@ int main() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //upload our triangles vertices into GPU memory
     // GL_STATIC_DRAW tells the gpu that this data wont change often which allows the GPU to optimise
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); //as said at the top of the file, this is the VAO recipe itself.
-    //slot 0 (matches the shader), 3 floats per vertex, they're floats, dont normalise them, each vertex is 3*sizeof(float) apart (the stride) (12 bytes)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0); //as said at the top of the file, this is the VAO recipe itself.
+    //position: location 0, 3 floats, stride 5 floats
+    //we keep the second arg 3 bc this is the pos attribute, we declare UV attribute below
+    //its 5 bc 3 position floats (x/y/z) and 2 UV floats
+    //slot 0 (matches the shader), 3 floats per vertex/UV, they're floats, dont normalise them, each vertex and UV is 5*sizeof(float) apart (the stride) (12 bytes)
     // , starting at offset 0
     glEnableVertexAttribArray(0); //turn slot 0 on bc its off by default.
 
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    //uv: location 1, 2 floats, stride 5, offset 3 floats in
+    glEnableVertexAttribArray(1);
+
 
     Shader shader("basic.vert", "basic.frag");
+    Texture texture("checker.png");
 
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); //tell GLFW to call that func when the window resizes
@@ -242,6 +251,8 @@ int main() {
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
+
+        texture.bind();
 
         glBindVertexArray(VAO); //bind the VAO (replay the recipe)
         glDrawArrays(GL_TRIANGLES, 0, 36); //and draw triangles, starting at vertex 0, using 36 vertices which is my cube (vertex count will have to be updated with changes)
