@@ -23,11 +23,11 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 }
 
 
-void processInput(GLFWwindow* window, glm::vec3& cameraPos, glm::vec3 cameraFront, glm::vec3 cameraUp) { //we use & so we get a reference which means when we
+void processInput(GLFWwindow* window, glm::vec3& cameraPos, glm::vec3 cameraFront, glm::vec3 cameraUp, float deltaTime) { //we use & so we get a reference which means when we
                                                                                                             //modify cameraPos, we change the value in main,
                                                                                                             //not a copy. we dont use & for Front and Up
                                                                                                             //bc they are only ever read, not changed
-    float speed = 0.05f;
+    float speed = 5.0f * deltaTime;
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){ //polls if W is held down
         cameraPos += speed * cameraFront;
@@ -51,6 +51,9 @@ float lastY = 300.0f;
 bool firstMouse = true; //a flag to handle the very first mouse event cleanly
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f); //make camera look forward
 
+
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     if (firstMouse) { //stop the mouse from jumping at startup bc the cursor could be anywhere
@@ -204,7 +207,11 @@ int main() {
 
 
     while (!glfwWindowShouldClose(window)) {
-        processInput(window, cameraPos, cameraFront, cameraUp); //process/poll input in my own callback
+        float currentFrame = (float)glfwGetTime(); //seconds since start
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
+        processInput(window, cameraPos, cameraFront, cameraUp, deltaTime); //process/poll input in my own callback
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f); //sets what colour to wipe the screen to (teal). doesnt draw yet
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
