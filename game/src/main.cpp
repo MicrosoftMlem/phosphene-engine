@@ -4,9 +4,11 @@
 #include <glm/gtc/matrix_transform.hpp> //the builders translate, rotate, scale
 #include <glm/gtc/type_ptr.hpp> // a bridge to give glms matrix to OpenGL
 #include <iostream>
+#include <vector>
 #include "Shader.h"
 #include "Texture.h"
 #include "Camera.h"
+#include "Mesh.h"
 
 /*
 when we are telling the gpu to do stuff we have 2 things:
@@ -74,7 +76,7 @@ int main() {
 
     //remember to write an MD on this
     //write about A, B, C and adding D
-    float vertices[] = { //cube vertices in local space (the cubes shape defined around its own origin)
+    std::vector<float> vertices = { //cube vertices in local space (the cubes shape defined around its own origin)
 
         // BACK
         -0.5, -0.5, -0.5, 0.0, 0.0, //back triangle A
@@ -131,35 +133,10 @@ int main() {
         0.5, 0.5, -0.5, 0.0, 1.0,
     };
 
-    unsigned int VAO, VBO; //create the VAO and VBO
-    glGenVertexArrays(1, &VAO); //and get their IDs
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(VAO); //set this VAO as the active one (bind it) - read below
-    /*
-    OpenGL is a state machine, you bind an object (such as the VAO) to make it active, then subsequent calls affect whatever is bound
-    so unlike normal c++ instead of passing objects to functions, we bind them and the calls act on the bound one
-    */
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO); //bind the VBO
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //upload our triangles vertices into GPU memory
-    // GL_STATIC_DRAW tells the gpu that this data wont change often which allows the GPU to optimise
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0); //as said at the top of the file, this is the VAO recipe itself.
-    //position: location 0, 3 floats, stride 5 floats
-    //we keep the second arg 3 bc this is the pos attribute, we declare UV attribute below
-    //its 5 bc 3 position floats (x/y/z) and 2 UV floats
-    //slot 0 (matches the shader), 3 floats per vertex/UV, they're floats, dont normalise them, each vertex and UV is 5*sizeof(float) apart (the stride) (12 bytes)
-    // , starting at offset 0
-    glEnableVertexAttribArray(0); //turn slot 0 on bc its off by default.
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    //uv: location 1, 2 floats, stride 5, offset 3 floats in
-    glEnableVertexAttribArray(1);
-
 
     Shader shader("basic.vert", "basic.frag");
     Texture texture("checker.png");
+    Mesh cubeMesh(vertices);
 
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); //tell GLFW to call that func when the window resizes
@@ -211,9 +188,7 @@ int main() {
 
         texture.bind();
 
-        glBindVertexArray(VAO); //bind the VAO (replay the recipe)
-        glDrawArrays(GL_TRIANGLES, 0, 36); //and draw triangles, starting at vertex 0, using 36 vertices which is my cube (vertex count will have to be updated with changes)
-
+        cubeMesh.draw();
 
         glfwSwapBuffers(window); //swaps a back buffer ontop which should have game frame drawn to. back buffers reduce tearing etc
         glfwPollEvents(); //check for mouse, keyboard etc. otherwise OS will think its hung
