@@ -11,6 +11,7 @@ public:
 
     float moveSpeed;
     float gravity;
+    float jumpStrength;
 
     Player(glm::vec3 startPos);
 
@@ -19,4 +20,5 @@ public:
 private:
     void handleInput(GLFWwindow* window, Camera& camera, float deltaTime);
     void applyPhysics(float deltaTime);
+    bool grounded;
 };

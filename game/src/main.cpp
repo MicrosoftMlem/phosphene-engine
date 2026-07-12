@@ -74,6 +74,17 @@ int main() {
         return -1;
     }
 
+    std::vector<float> floorPlaneVertices = {
+        -5.0, 0.0, -5.0, 0.0, 0.0, //top triangle A
+        -5.0, 0.0, 5.0, 1.0, 0.0,
+        5.0, 0.0, 5.0, 1.0, 1.0,
+
+        -5.0, 0.0, -5.0, 0.0, 0.0, //top triangle B
+        5.0, 0.0, 5.0, 1.0, 1.0,
+        5.0, 0.0, -5.0, 0.0, 1.0,
+    };
+
+
     //remember to write an MD on this
     //write about A, B, C and adding D
     std::vector<float> vertices = { //cube vertices in local space (the cubes shape defined around its own origin)
@@ -150,7 +161,7 @@ int main() {
     glfwSetWindowUserPointer(window, &camera); //store the camera pointer in glfw's single free pointer storage (for anything)
 
 
-    Player player(glm::vec3(0.0f, 0.0f, 3.0f)); //create/spawn player
+    Player player(glm::vec3(0.0f, 40.0f, 3.0f)); //create/spawn player
 
 
     while (!glfwWindowShouldClose(window)) {
