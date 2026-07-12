@@ -15,6 +15,7 @@ public:
     float jumpStrength;
     float groundAccel;
     float airAccel;
+    float eyeHeight;
 
     Player(glm::vec3 startPos);
 

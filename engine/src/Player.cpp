@@ -9,6 +9,7 @@ Player::Player(glm::vec3 startPos) {
     grounded = false;
     groundAccel = 12.0f;
     airAccel = 2.0f;
+    eyeHeight = 0.7f;
 }
 
 void Player::update(GLFWwindow* window, Camera& camera, const std::vector<AABB>& colliders, float deltaTime) {
@@ -18,7 +19,7 @@ void Player::update(GLFWwindow* window, Camera& camera, const std::vector<AABB>&
     
     resolveCollisions(colliders, deltaTime); //actually moves position while resolving collisions
 
-    camera.position = position; // camera follows player
+    camera.position = position + glm::vec3(0.0f, eyeHeight, 0.0f); // camera follows player, in head (1.7 up)
 }
 
 

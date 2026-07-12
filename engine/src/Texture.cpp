@@ -14,7 +14,7 @@ Texture::Texture(const char* path) {
 
     //MIN_FILTER/MAG_FILTER are minifying (texture smaller than screen area) and magnifying (bigger). GL_LINEAR = smooth blend
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(true); //image store rows top to bottom but OpenGL's UV (0,0) is bottom left so we need to flip the data

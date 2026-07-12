@@ -10,6 +10,7 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include "Player.h"
+#include "GameObject.h"
 
 /*
 when we are telling the gpu to do stuff we have 2 things:
@@ -153,22 +154,29 @@ int main() {
     Mesh cubeMesh(vertices);
 
 
+    std::vector<GameObject> level;
+
+    //a wide, thin floor in the centre of world, 0.5 below (y)
+    level.push_back(GameObject(&cubeMesh, glm::vec3(0.0f, -0.5f, 0.0f), glm::vec3(100.0f, 1.0f, 100.0f)));
+
+    //move objects to test with:
+    level.push_back(GameObject(&cubeMesh, glm::vec3(3.0f, 0.5f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
+    level.push_back(GameObject(&cubeMesh, glm::vec3(-2.0f, 0.5f, 4.0f), glm::vec3(1.0f, 2.0f, 1.0f)));
+    level.push_back(GameObject(&cubeMesh, glm::vec3(0.0f, 1.0f, -5.0f), glm::vec3(4.0f, 2.0f, 1.0f)));
+
+
+
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); //tell GLFW to call that func when the window resizes
     glfwSetCursorPosCallback(window, mouse_callback);
+
 
     glEnable(GL_DEPTH_TEST); //enable depth testing
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //hides cursor and locks it so it wont come out window when doing camera moving w/ mouse
 
-    Camera camera(glm::vec3(0.0f, 0.0f, 3.0f)); //create camera
 
+    Camera camera(glm::vec3(0.0f, 0.0f, 3.0f)); //create camera
     glfwSetWindowUserPointer(window, &camera); //store the camera pointer in glfw's single free pointer storage (for anything)
 
-
-    std::vector<AABB> colliders;
-    //floor - a big flat box from y 0 to y -1
-    colliders.push_back({ glm::vec3(-50.0f, -1.0f, -50.0f), glm::vec3(50, 0.0f, 50.0f) });
-    //cube in the centre for testing
-    colliders.push_back({ glm::vec3(-0.5f, -0.0f, -0.5f), glm::vec3(0.5f, 1.0f, 0.5f) });
 
     Player player(glm::vec3(0.0f, 40.0f, 3.0f)); //create/spawn player
 
@@ -178,42 +186,42 @@ int main() {
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        //camera.processKeyboard(window, deltaTime); //player does input now
+        //first update game logic:
+        std::vector<AABB> colliders;
+        for (GameObject& obj : level) {
+            colliders.push_back(obj.getAABB());
+        }
         player.update(window, camera, colliders, deltaTime);
 
+        //then render:
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f); //sets what colour to wipe the screen to (teal). doesnt draw yet
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         //color buffer actually wipes screen with above set color. every frame starts with this to cover previous frame. and depth buffer also tells it to clear the depth buffer
         //since GL_COLOR_BUFFER_BIT and GL_DEPTH_BUFFER_BIT are bit flags, we can combine them with |
 
-        // every frame:
-        shader.use();
+
 
         int w, h;
         glfwGetFramebufferSize(window, &w, &h); //set w and h to the width and height of the window
         float aspect = (float)w / (float)h;
 
-
-        glm::mat4 model = glm::mat4(1.0f); //identity
-        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f)); //rotate over time (0.5 on x and 1 on y so its a tilted axis kinda thing)
-
         glm::mat4 view = camera.getViewMatrix(); //make the camera be at right pos and look in right dir
-
         glm::mat4 projection; //identity
         projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f); //fov = 45, aspect ratio = 800/600, near clip plane = 0.1f (close than this isnt drawn),
                                                                                             // far clip plane 100.0f (further than this isnt drawn)
-
-        int modelLoc = glGetUniformLocation(shader.ID, "model");
         int viewLoc = glGetUniformLocation(shader.ID, "view");
         int projLoc = glGetUniformLocation(shader.ID, "projection");
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
 
+        shader.use();
         texture.bind();
 
-        cubeMesh.draw();
+        for (GameObject& obj : level) { //for each gameobject in the level
+            obj.draw(shader);
+        }
+
 
         glfwSwapBuffers(window); //swaps a back buffer ontop which should have game frame drawn to. back buffers reduce tearing etc
         glfwPollEvents(); //check for mouse, keyboard etc. otherwise OS will think its hung
