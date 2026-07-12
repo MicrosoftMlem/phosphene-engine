@@ -57,6 +57,50 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     camera->processMouse(xoffset, yoffset); //its '->' not '::' bc we are doing the function of the specific camera pointer so 'deference the pointer and call the method'
 }
 
+
+
+std::vector<float> computeNormals(const std::vector<float>& verts) {
+    std::vector<float> out;
+    int stride = 5; //5 floats per vertex (x,y,z,u,v)
+
+
+    for (int i = 0; i < verts.size(); i += stride * 3) { //go thru 3 verts at a time (so basically: for each triangle)
+        //get the 3 positions:
+        glm::vec3 A(verts[i + 0], verts[i + 1], verts[i + 2]);
+        glm::vec3 B(verts[i + stride + 0], verts[i + stride + 1], verts[i + stride + 2]);
+        glm::vec3 C(verts[i + stride*2 + 0], verts[i + stride*2 + 1], verts[i + stride*2 + 2]);
+
+        //compute the faces normal
+        glm::vec3 edge1 = B - A;
+        glm::vec3 edge2 = C - A;
+        glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
+        
+        //output the 3 vertices with the normals appended
+        for (int v = 0; v < 3; v++) {
+            int base = i + v * stride;
+            
+            out.push_back(verts[base + 0]); //X
+            out.push_back(verts[base + 1]); //Y
+            out.push_back(verts[base + 2]); //Z
+            out.push_back(verts[base + 3]); //U
+            out.push_back(verts[base + 4]); //V
+            
+            //append the normal:
+            out.push_back(normal.x);
+            out.push_back(normal.y);
+            out.push_back(normal.z);
+        }
+    }
+    return out;
+}
+
+
+
+
+
+
+
+
 int main() {
     glfwInit(); //starts the library
 
@@ -78,20 +122,11 @@ int main() {
         return -1;
     }
 
-    std::vector<float> floorPlaneVertices = {
-        -5.0, 0.0, -5.0, 0.0, 0.0, //top triangle A
-        -5.0, 0.0, 5.0, 1.0, 0.0,
-        5.0, 0.0, 5.0, 1.0, 1.0,
-
-        -5.0, 0.0, -5.0, 0.0, 0.0, //top triangle B
-        5.0, 0.0, 5.0, 1.0, 1.0,
-        5.0, 0.0, -5.0, 0.0, 1.0,
-    };
 
 
     //remember to write an MD on this
     //write about A, B, C and adding D
-    std::vector<float> vertices = { //cube vertices in local space (the cubes shape defined around its own origin)
+    std::vector<float> rawVertices = { //cube vertices in local space (the cubes shape defined around its own origin)
 
         // BACK
         -0.5, -0.5, -0.5, 0.0, 0.0, //back triangle A
@@ -148,6 +183,8 @@ int main() {
         0.5, 0.5, -0.5, 0.0, 1.0,
     };
 
+    std::vector<float> vertices = computeNormals(rawVertices);
+
 
     Shader shader("basic.vert", "basic.frag");
     Texture texture("checker.png");
@@ -157,13 +194,14 @@ int main() {
     std::vector<GameObject> level;
 
     //a wide, thin floor in the centre of world, 0.5 below (y)
-    level.push_back(GameObject(&cubeMesh, glm::vec3(0.0f, -0.5f, 0.0f), glm::vec3(100.0f, 1.0f, 100.0f)));
+    level.push_back(GameObject(&cubeMesh, &texture, glm::vec3(0.0f, -0.5f, 0.0f), glm::vec3(100.0f, 1.0f, 100.0f), glm::vec2(12.0f, 12.0f)));
 
     //move objects to test with:
-    level.push_back(GameObject(&cubeMesh, glm::vec3(3.0f, 0.5f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
-    level.push_back(GameObject(&cubeMesh, glm::vec3(-2.0f, 0.5f, 4.0f), glm::vec3(1.0f, 2.0f, 1.0f)));
-    level.push_back(GameObject(&cubeMesh, glm::vec3(0.0f, 1.0f, -5.0f), glm::vec3(4.0f, 2.0f, 1.0f)));
+    level.push_back(GameObject(&cubeMesh, &texture, glm::vec3(3.0f, 0.5f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(1.0f, 1.0f)));
+    level.push_back(GameObject(&cubeMesh, &texture, glm::vec3(-2.0f, 0.5f, 4.0f), glm::vec3(1.0f, 2.0f, 1.0f), glm::vec2(1.0f, 1.0f)));
+    level.push_back(GameObject(&cubeMesh, &texture, glm::vec3(0.0f, 1.0f, -5.0f), glm::vec3(4.0f, 2.0f, 1.0f), glm::vec2(4.0f, 1.0f)));
 
+    glm::vec3 worldLightPos = glm::vec3(5.0f, 10.0f, 5.0f);
 
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); //tell GLFW to call that func when the window resizes
@@ -194,11 +232,13 @@ int main() {
         player.update(window, camera, colliders, deltaTime);
 
         //then render:
+
+        shader.use();
+
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f); //sets what colour to wipe the screen to (teal). doesnt draw yet
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         //color buffer actually wipes screen with above set color. every frame starts with this to cover previous frame. and depth buffer also tells it to clear the depth buffer
         //since GL_COLOR_BUFFER_BIT and GL_DEPTH_BUFFER_BIT are bit flags, we can combine them with |
-
 
 
         int w, h;
@@ -215,8 +255,13 @@ int main() {
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
 
-        shader.use();
-        texture.bind();
+        int lightPosLoc = glGetUniformLocation(shader.ID, "lightPos");
+        int lightColorLoc = glGetUniformLocation(shader.ID, "lightColor");
+        int viewPosLoc = glGetUniformLocation(shader.ID, "viewpos");
+        glUniform3f(lightPosLoc, worldLightPos.x, worldLightPos.y, worldLightPos.z);
+        glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f); // white light
+        glUniform3f(viewPosLoc, camera.position.x, camera.position.y, camera.position.z);
+
 
         for (GameObject& obj : level) { //for each gameobject in the level
             obj.draw(shader);

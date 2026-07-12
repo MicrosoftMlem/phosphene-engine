@@ -5,10 +5,12 @@
 #include "GameObject.h"
 #include "AABB.h"
 
-GameObject::GameObject(Mesh* mesh, glm::vec3 position, glm::vec3 size) {
+GameObject::GameObject(Mesh* mesh, Texture* texture, glm::vec3 position, glm::vec3 size, glm::vec2 textureScale) {
     this->mesh = mesh; //bc mesh is an arg but also we have the member 'mesh' we use -> to specify its our member
     this->position = position;
     this->size = size;
+    this->texture = texture;
+    this->textureScale = textureScale;
 
 }
 
@@ -27,5 +29,10 @@ void GameObject::draw(Shader& shader) {
 
     int modelLoc = glGetUniformLocation(shader.ID, "model"); //get the shader model uniform
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model)); //store the model matrix in the uniform
+
+    texture->bind(); //bind the texture
+    int scaleLoc = glGetUniformLocation(shader.ID, "textureScale"); //get the texture scale uniform
+    glUniform2fv(scaleLoc, 1, glm::value_ptr(textureScale)); //set it to textureScale
+
     mesh->draw(); //tell the mesh to draw '->' for same reason as comment at top
 }
