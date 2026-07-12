@@ -1,3 +1,5 @@
+READ AS RAW TEXT NOT MD
+
 so a matrix is used to describe and apply rotations and transformations.
 if u multiply a vector by a matrix it will apply the transformation to the vector.
 

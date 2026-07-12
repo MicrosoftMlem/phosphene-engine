@@ -1,3 +1,5 @@
+READ AS RAW TEXT NOT MD
+
 the depth buffer (aka z-buffer) is a single image that goes over the entire screen, and for each pixel records
 how far away the thing currently drawn there is.
 

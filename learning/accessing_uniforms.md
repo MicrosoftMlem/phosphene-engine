@@ -1,3 +1,5 @@
+READ AS RAW TEXT NOT MD
+
 here is an example (was used in main.cpp before) on how to access and modify shader uniforms (specifically matrixes):
 
 

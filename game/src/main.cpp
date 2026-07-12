@@ -6,6 +6,7 @@
 #include <iostream>
 #include "Shader.h"
 #include "Texture.h"
+#include "Camera.h"
 
 /*
 when we are telling the gpu to do stuff we have 2 things:
@@ -24,39 +25,17 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 }
 
 
-void processInput(GLFWwindow* window, glm::vec3& cameraPos, glm::vec3 cameraFront, glm::vec3 cameraUp, float deltaTime) { //we use & so we get a reference which means when we
-                                                                                                            //modify cameraPos, we change the value in main,
-                                                                                                            //not a copy. we dont use & for Front and Up
-                                                                                                            //bc they are only ever read, not changed
-    float speed = 5.0f * deltaTime;
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){ //polls if W is held down
-        cameraPos += speed * cameraFront;
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-        cameraPos -= speed * cameraFront;
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * speed; //the direction perpedicular to front and up = right (and left if negative)
-                                                                                // we normalise it bc otherwise strafe speed would change based on angles 
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * speed;
-    }
-}
-
-float yaw = -90.0f; //0 points down +x so -90 points down -z
-float pitch = 0.0f;
 float lastX = 400.0f; //the mouse position last frame
 float lastY = 300.0f;
 bool firstMouse = true; //a flag to handle the very first mouse event cleanly
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f); //make camera look forward
-
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    Camera* camera = (Camera*)glfwGetWindowUserPointer(window); //get the stored camera pointer (its stored as a void* so we cast it to a camera*)
+
     if (firstMouse) { //stop the mouse from jumping at startup bc the cursor could be anywhere
         lastX = xpos;
         lastY = ypos;
@@ -68,26 +47,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     lastX = xpos;
     lastY = ypos;
 
-    float sensitivity = 0.1f;
-    xoffset *= sensitivity; //raw mouse movement is to fast so scale it down
-    yoffset *= sensitivity;
-
-    yaw += xoffset; //accumulate the angles
-    pitch += yoffset;
-
-    if (pitch > 89.0f) { //clamp the pitch to stop you from looking past straight up
-        pitch = 89.0f;
-    }
-    if (pitch < -89.0f) {
-        pitch = -89.0f;
-    }
-
-    glm::vec3 direction; //this math somehow converts angles into direction vectors
-    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    direction.y = sin(glm::radians(pitch));
-    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    cameraFront = glm::normalize(direction);
-
+    camera->processMouse(xoffset, yoffset); //its '->' not '::' bc we are doing the function of the specific camera pointer so 'deference the pointer and call the method'
 }
 
 int main() {
@@ -208,19 +168,16 @@ int main() {
     glEnable(GL_DEPTH_TEST); //enable depth testing
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //hides cursor and locks it so it wont come out window when doing camera moving w/ mouse
 
+    Camera camera(glm::vec3(0.0f, 0.0f, 3.0f)); //create camera
 
-    //we setup the camera outside the main loop bc camera pos values etc should persist between frames
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f); //move the camera 3 forwards so we can see the cube at 0,0,0
-    //cameraFront is now declared outside main()
-    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f); //world up
-
+    glfwSetWindowUserPointer(window, &camera); //store the camera pointer in glfw's single free pointer storage (for anything)
 
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = (float)glfwGetTime(); //seconds since start
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        processInput(window, cameraPos, cameraFront, cameraUp, deltaTime); //process/poll input in my own callback
+        camera.processKeyboard(window, deltaTime);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f); //sets what colour to wipe the screen to (teal). doesnt draw yet
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -238,7 +195,7 @@ int main() {
         glm::mat4 model = glm::mat4(1.0f); //identity
         model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f)); //rotate over time (0.5 on x and 1 on y so its a tilted axis kinda thing)
 
-        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); //make the camera be at right pos and look in right dir
+        glm::mat4 view = camera.getViewMatrix(); //make the camera be at right pos and look in right dir
 
         glm::mat4 projection; //identity
         projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f); //fov = 45, aspect ratio = 800/600, near clip plane = 0.1f (close than this isnt drawn),

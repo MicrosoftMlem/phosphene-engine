@@ -4,8 +4,8 @@
 #include <iostream>
 
 Texture::Texture(const char* path) {
-    glGenTextures(1, &ID); //generate texture
-    glBindTexture(GL_TEXTURE_2D, ID); //bind texture. these 2 are just like the VBO and VAO
+    glGenTextures(1, &ID); //generate texture ID
+    glBindTexture(GL_TEXTURE_2D, ID); //bind texture. kinda like VBO/VAO
     //GL_TEXTURE_2D means its a normal texture
 
     //These make the texture tile (GL_REPEAT tiles it) S = horizontal, T = vertical. they're texture space names for x/y

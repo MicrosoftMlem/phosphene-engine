@@ -17,7 +17,7 @@ target_include_directories(glad PUBLIC vendor/glad/include) #public == anything 
 
 
 # engine:
-add_library(engine STATIC engine/src/Shader.cpp engine/src/Texture.cpp) #compile engine files into libengine.a
+add_library(engine STATIC engine/src/Shader.cpp engine/src/Texture.cpp engine/src/Camera.cpp) #compile engine files into libengine.a
 target_include_directories(engine PUBLIC engine/include vendor) #public == anything that links engine also gets this include path // make libs in vendor be included in engine
 target_link_libraries(engine PUBLIC glad) #engine needs glad
 

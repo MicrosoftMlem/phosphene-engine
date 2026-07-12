@@ -1,3 +1,5 @@
+READ AS RAW TEXT NOT MD
+
 
 This document has notes and code from the old version of main.cpp when we hardcoded shaders.
 Im keeping it because it has good notes.

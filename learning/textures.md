@@ -1,3 +1,7 @@
+READ AS RAW TEXT NOT MD
+
+THIS NEEDS BETTER NOTES ON THE ACTUAL PROCESS OF LOADING A TEXTURE IN
+
 The gpu needs to know which part of an image goes on which part of a surface (when texturing an object)
 That mapping is done with:
 

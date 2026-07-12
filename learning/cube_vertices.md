@@ -1,3 +1,5 @@
+READ AS RAW TEXT NOT MD
+
 When making a cube, you can't just do 4 vertices per face.
 A face of a cube is a square, and a square is actually 2 triangles.
 I call them triangle A and triangle B
