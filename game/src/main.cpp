@@ -22,6 +22,8 @@ when we want coordinates, atleast for now we use NDC - Normalised Device Coordin
 - later on we can map this to real coords (GL still uses NDC, we can just use real coords at a higher level. like a wrapper.)
 */
 
+
+
 //GL will call this every time the window is resized and will pass the args
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height); //tells GL to render into this whole area
@@ -35,6 +37,7 @@ bool firstMouse = true; //a flag to handle the very first mouse event cleanly
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     Camera* camera = (Camera*)glfwGetWindowUserPointer(window); //get the stored camera pointer (its stored as a void* so we cast it to a camera*)
@@ -161,6 +164,12 @@ int main() {
     glfwSetWindowUserPointer(window, &camera); //store the camera pointer in glfw's single free pointer storage (for anything)
 
 
+    std::vector<AABB> colliders;
+    //floor - a big flat box from y 0 to y -1
+    colliders.push_back({ glm::vec3(-50.0f, -1.0f, -50.0f), glm::vec3(50, 0.0f, 50.0f) });
+    //cube in the centre for testing
+    colliders.push_back({ glm::vec3(-0.5f, -0.0f, -0.5f), glm::vec3(0.5f, 1.0f, 0.5f) });
+
     Player player(glm::vec3(0.0f, 40.0f, 3.0f)); //create/spawn player
 
 
@@ -170,7 +179,7 @@ int main() {
         lastFrame = currentFrame;
 
         //camera.processKeyboard(window, deltaTime); //player does input now
-        player.update(window, camera, deltaTime);
+        player.update(window, camera, colliders, deltaTime);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f); //sets what colour to wipe the screen to (teal). doesnt draw yet
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

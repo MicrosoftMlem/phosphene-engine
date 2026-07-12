@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 #include "Camera.h"
+#include "AABB.h"
 
 class Player {
 public:
@@ -12,13 +13,17 @@ public:
     float moveSpeed;
     float gravity;
     float jumpStrength;
+    float groundAccel;
+    float airAccel;
 
     Player(glm::vec3 startPos);
 
-    void update(GLFWwindow* window, Camera& camera, float deltaTime);
+    void update(GLFWwindow* window, Camera& camera, const std::vector<AABB>& colliders, float deltaTime);
+
+    AABB getAABB();
 
 private:
     void handleInput(GLFWwindow* window, Camera& camera, float deltaTime);
-    void applyPhysics(float deltaTime);
+    void resolveCollisions(const std::vector<AABB>& colliders, float deltaTime);
     bool grounded;
 };
