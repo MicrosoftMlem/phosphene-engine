@@ -9,6 +9,7 @@
 #include "Texture.h"
 #include "Camera.h"
 #include "Mesh.h"
+#include "Player.h"
 
 /*
 when we are telling the gpu to do stuff we have 2 things:
@@ -54,7 +55,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
 int main() {
     glfwInit(); //starts the library
-
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -149,12 +149,17 @@ int main() {
 
     glfwSetWindowUserPointer(window, &camera); //store the camera pointer in glfw's single free pointer storage (for anything)
 
+
+    Player player(glm::vec3(0.0f, 0.0f, 3.0f)); //create/spawn player
+
+
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = (float)glfwGetTime(); //seconds since start
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        camera.processKeyboard(window, deltaTime);
+        //camera.processKeyboard(window, deltaTime); //player does input now
+        player.update(window, camera, deltaTime);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f); //sets what colour to wipe the screen to (teal). doesnt draw yet
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
