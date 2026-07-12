@@ -11,6 +11,10 @@
 #include "Mesh.h"
 #include "Player.h"
 #include "GameObject.h"
+#include "GameState.h"
+#include "Pistol.h"
+#include "Item.h"
+#include "InputCommand.h"
 
 /*
 when we are telling the gpu to do stuff we have 2 things:
@@ -96,7 +100,28 @@ std::vector<float> computeNormals(const std::vector<float>& verts) {
 
 
 
+void simulate(GameState& state, int playerIndex, const InputCommand& command, float deltaTime) {
+    PlayerState& player = state.players[playerIndex]; //our players PlayerState
 
+    if (command.equipWeapon) {
+        player.equipped = EquipSlot::Weapon;
+    }
+    if (command.equipAbility) {
+        player.equipped = EquipSlot::Ability;
+    }
+
+    Item* held = (player.equipped == EquipSlot::Weapon) ? player.weapon : player.ability;
+
+    if (held) {
+        held->passiveUpdate(state, playerIndex, deltaTime);
+        if (command.primaryPressed) {
+            held->use(state, playerIndex, UseType::Primary);
+        }
+        if (command.secondaryPressed) {
+            held->use(state, playerIndex, UseType::Secondary);
+        }
+    }
+}
 
 
 
@@ -218,6 +243,13 @@ int main() {
 
     Player player(glm::vec3(0.0f, 40.0f, 3.0f)); //create/spawn player
 
+    GameState gameState;
+    PlayerState player0;
+    player0.position = glm::vec3(0.0f);
+    player0.weapon = new Pistol();
+    gameState.players.push_back(player0);
+
+
 
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = (float)glfwGetTime(); //seconds since start
@@ -230,6 +262,25 @@ int main() {
             colliders.push_back(obj.getAABB());
         }
         player.update(window, camera, colliders, deltaTime);
+
+        InputCommand command;
+
+        if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+            command.equipWeapon = true;
+        }
+        if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+            command.equipAbility = true;
+        }
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+            command.primaryPressed = true;
+        }
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+            command.secondaryPressed = true;
+        }
+
+
+        simulate(gameState, 0, command, deltaTime);
+
 
         //then render:
 
@@ -247,7 +298,7 @@ int main() {
 
         glm::mat4 view = camera.getViewMatrix(); //make the camera be at right pos and look in right dir
         glm::mat4 projection; //identity
-        projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f); //fov = 45, aspect ratio = 800/600, near clip plane = 0.1f (close than this isnt drawn),
+        projection = glm::perspective(glm::radians(70.0f), aspect, 0.1f, 100.0f); //fov = 45, aspect ratio = 800/600, near clip plane = 0.1f (close than this isnt drawn),
                                                                                             // far clip plane 100.0f (further than this isnt drawn)
         int viewLoc = glGetUniformLocation(shader.ID, "view");
         int projLoc = glGetUniformLocation(shader.ID, "projection");
