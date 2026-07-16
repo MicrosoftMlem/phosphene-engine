@@ -15,6 +15,13 @@ static void resolvePlayerCollisions(PlayerState& player, const std::vector<AABB>
 void simulate(GameState& state, int playerIndex, const InputCommand& command, const std::vector<AABB>& colliders, float deltaTime) {
     PlayerState& player = state.players[playerIndex]; //our players PlayerState
 
+    player.moveSpeed = player.baseMoveSpeed; //reset the stats (so items can update them below, or if nothing changes them they're back at defaults)
+    player.jumpStrength = player.baseMoveSpeed;
+    player.gravity = player.baseGravity;
+    player.groundAccel = player.baseGroundAccel;
+    player.airAccel = player.baseAirAccel;
+
+
     if (command.equipWeapon) { //weapons first incase they modify movement (below)
         player.equipped = EquipSlot::Weapon;
     }

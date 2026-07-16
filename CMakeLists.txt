@@ -27,7 +27,7 @@ target_link_libraries(engine PUBLIC glad) #engine needs glad
 #final step:
 
 # 'game' is an executable build from main.cpp
-add_executable(game game/src/main.cpp game/src/Pistol.cpp game/src/PlayingState.cpp)
+add_executable(game game/src/main.cpp game/src/Pistol.cpp game/src/PlayingState.cpp game/src/ButterflyKnife.cpp)
 # connect the game to everything it needs
 target_link_libraries(game PRIVATE engine glfw OpenGL::GL glm::glm) #the game needs: glad (GL loader), Open::GL (the actual GL lib),
                                                                         # glm::glm (math)

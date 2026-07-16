@@ -11,6 +11,12 @@ struct PlayerState {
     glm::vec3 velocity = glm::vec3(0.0f);
     float health = 100.0f;
 
+    float baseMoveSpeed = 8.0f;
+    float baseJumpStrength = 8.0f;
+    float baseGravity = -20.0f;
+    float baseGroundAccel = 12.0f;
+    float baseAirAccel = 2.0f;
+
     float moveSpeed = 8.0f;
     float jumpStrength = 8.0f;
     float gravity = -20.0f;
