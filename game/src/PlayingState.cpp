@@ -1,5 +1,6 @@
 #include "glm/glm.hpp"
 #include <glm/gtc/type_ptr.hpp>
+#include <iostream>
 #include "PlayingState.h"
 #include "Shader.h"
 #include "Texture.h"
@@ -76,6 +77,7 @@ void PlayingState::update(float deltaTime) {
 
     simulate(gameState, 0, command, colliders, deltaTime);
     activeCamera.position = gameState.players[0].position + glm::vec3(0.0f, 1.7f, 0.0f);
+
 }
 
 void PlayingState::render() {

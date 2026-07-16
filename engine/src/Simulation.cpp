@@ -20,6 +20,7 @@ void simulate(GameState& state, int playerIndex, const InputCommand& command, co
     player.gravity = player.baseGravity;
     player.groundAccel = player.baseGroundAccel;
     player.airAccel = player.baseAirAccel;
+    player.lookDirection = command.lookDirection;
 
 
     if (command.equipWeapon) { //weapons first incase they modify movement (below)

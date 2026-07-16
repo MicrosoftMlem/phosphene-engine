@@ -9,6 +9,7 @@ enum class EquipSlot { Weapon, Ability };
 struct PlayerState {
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 velocity = glm::vec3(0.0f);
+    glm::vec3 lookDirection = glm::vec3(0.0f, 0.0f, -1.0f);
     float health = 100.0f;
 
     float baseMoveSpeed = 8.0f;
