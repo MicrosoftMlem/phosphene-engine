@@ -18,7 +18,7 @@ target_include_directories(glad PUBLIC vendor/glad/include) #public == anything 
 
 # engine:
 add_library(engine STATIC engine/src/Shader.cpp engine/src/Texture.cpp engine/src/Camera.cpp engine/src/Mesh.cpp engine/src/Player.cpp
-                            engine/src/GameObject.cpp game/src/Pistol.cpp) #compile engine files into libengine.a
+                            engine/src/GameObject.cpp engine/src/Simulation.cpp) #compile engine files into libengine.a
 
 
 target_include_directories(engine PUBLIC engine/include vendor) #public == anything that links engine also gets this include path // make libs in vendor be included in engine
@@ -27,7 +27,7 @@ target_link_libraries(engine PUBLIC glad) #engine needs glad
 #final step:
 
 # 'game' is an executable build from main.cpp
-add_executable(game game/src/main.cpp)
+add_executable(game game/src/main.cpp game/src/Pistol.cpp game/src/PlayingState.cpp)
 # connect the game to everything it needs
 target_link_libraries(game PRIVATE engine glfw OpenGL::GL glm::glm) #the game needs: glad (GL loader), Open::GL (the actual GL lib),
                                                                         # glm::glm (math)

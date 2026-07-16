@@ -1,6 +1,7 @@
 #include "Mesh.h"
 #include <vector>
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 
 Mesh::Mesh(std::vector<float> vertices) {
     vertexCount = vertices.size() / 8; //.size is total float count, and 8 is bc each vertex is 8 floats (x, y, z, UV x, UV y)
@@ -39,4 +40,39 @@ Mesh::Mesh(std::vector<float> vertices) {
 void Mesh::draw() {
     glBindVertexArray(VAO); //bind the VAO (replay the recipe)
     glDrawArrays(GL_TRIANGLES, 0, vertexCount); //and draw triangles, starting at vertex 0, using vertexCount vertices
+}
+
+std::vector<float> computeNormals(const std::vector<float>& verts) {
+    std::vector<float> out;
+    int stride = 5; //5 floats per vertex (x,y,z,u,v)
+
+
+    for (int i = 0; i < verts.size(); i += stride * 3) { //go thru 3 verts at a time (so basically: for each triangle)
+        //get the 3 positions:
+        glm::vec3 A(verts[i + 0], verts[i + 1], verts[i + 2]);
+        glm::vec3 B(verts[i + stride + 0], verts[i + stride + 1], verts[i + stride + 2]);
+        glm::vec3 C(verts[i + stride*2 + 0], verts[i + stride*2 + 1], verts[i + stride*2 + 2]);
+
+        //compute the faces normal
+        glm::vec3 edge1 = B - A;
+        glm::vec3 edge2 = C - A;
+        glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
+        
+        //output the 3 vertices with the normals appended
+        for (int v = 0; v < 3; v++) {
+            int base = i + v * stride;
+            
+            out.push_back(verts[base + 0]); //X
+            out.push_back(verts[base + 1]); //Y
+            out.push_back(verts[base + 2]); //Z
+            out.push_back(verts[base + 3]); //U
+            out.push_back(verts[base + 4]); //V
+            
+            //append the normal:
+            out.push_back(normal.x);
+            out.push_back(normal.y);
+            out.push_back(normal.z);
+        }
+    }
+    return out;
 }
