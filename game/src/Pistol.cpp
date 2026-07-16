@@ -33,7 +33,7 @@ void Pistol::use(GameState& state, int holderIndex, UseType type) {
     }
 }
 
-void Pistol::passiveUpdate(GameState& state, int holderIndex, float deltaTime) {
+void Pistol::tickInternal(float deltaTime) {
     if (primaryCooldown > 0.0f) {
         primaryCooldown -= deltaTime;
     }

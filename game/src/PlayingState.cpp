@@ -32,7 +32,8 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
 
     PlayerState player0; //player 0's playerstate
     player0.position = glm::vec3(0.0f);
-    player0.weapon = new ButterflyKnife();
+    player0.ability = new ButterflyKnife();
+    player0.weapon = new Pistol();
     gameState.players.push_back(player0);
 }
 

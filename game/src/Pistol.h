@@ -8,7 +8,7 @@ public:
     int ammo = 18;
 
 private:
-    void passiveUpdate(GameState& state, int holderIndex, float deltaTime);
+    virtual void tickInternal(float deltaTime);
 
     float primaryCooldown = 0.0f;
     float primaryRate = 4.0f;
@@ -16,3 +16,4 @@ private:
     float secondaryCooldown = 0.0f;
     float secondaryRate = 25.0f;
 };
+

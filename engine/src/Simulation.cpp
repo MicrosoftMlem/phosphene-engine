@@ -31,8 +31,24 @@ void simulate(GameState& state, int playerIndex, const InputCommand& command, co
 
     Item* held = (player.equipped == EquipSlot::Weapon) ? player.weapon : player.ability;
 
+    if (player.weapon) {
+        player.weapon->tickInternal(deltaTime);
+    }
+    if (player.ability) {
+        player.ability->tickInternal(deltaTime);
+    }
+
+    if (player.weapon && (player.weapon == held || player.weapon->isAlwaysActive())) {
+        //if we have a weapon, AND we are either holding it or it always ticks, tick it
+        player.weapon->passiveUpdate(state, playerIndex, deltaTime);
+    }
+
+    if (player.ability && (player.ability == held || player.ability->isAlwaysActive())) {
+        //if we have an ability, AND we are either holding it or it always ticks, tick it
+        player.ability->passiveUpdate(state, playerIndex, deltaTime);
+    }
+
     if (held) {
-        held->passiveUpdate(state, playerIndex, deltaTime);
         
         if (command.primaryPressed) { //currently hardcoded that left click is semi auto 
             held->use(state, playerIndex, UseType::Primary);
