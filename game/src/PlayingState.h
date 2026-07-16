@@ -6,7 +6,6 @@
 #include "GameStateBase.h"
 #include "GameState.h"
 #include "Camera.h"
-#include "Player.h"
 #include "Shader.h"
 #include "Texture.h"
 #include "Mesh.h"
@@ -23,10 +22,12 @@ private:
     GLFWwindow* window;
     GameState gameState;
     Camera activeCamera;
-    Player player;
     glm::vec3 worldLightPos;
     Shader shader;
     Texture texture;
     Mesh cubeMesh;
     std::vector<GameObject> level;
+
+    bool primaryWasDown = false; //for edge detecting mouse click
+    bool secondaryWasDown = false;
 };

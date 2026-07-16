@@ -14,8 +14,7 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
     : shader("basic.vert", "basic.frag"),
       texture("checker.png"),
       cubeMesh(computeNormals(Primitive::rawCubeVertices)),
-      activeCamera(glm::vec3(0.0f, 0.0f, 3.0f)),
-      player(glm::vec3(0.0f, 0.0f, 3.0f))
+      activeCamera(glm::vec3(0.0f, 0.0f, 3.0f))
 
 {//then this is the constructor
     this->window = window;
@@ -43,9 +42,16 @@ void PlayingState::update(float deltaTime) {
     for (GameObject& obj : level) {
         colliders.push_back(obj.getAABB());
     }
-    player.update(window, activeCamera, colliders, deltaTime);
 
     InputCommand command;
+    
+    command.moveForward = (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS);
+    command.moveBack = (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS);
+    command.moveLeft = (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS);
+    command.moveRight = (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS);
+    command.jump = (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
+    command.lookDirection = activeCamera.front; //so the simulate can process where to move etc
+
 
     if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
         command.equipWeapon = true;
@@ -53,15 +59,21 @@ void PlayingState::update(float deltaTime) {
     if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
         command.equipAbility = true;
     }
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-        command.primaryPressed = true;
-    }
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-        command.secondaryPressed = true;
-    }
+    
+    bool primaryIsDown = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS); //if left mouse pressed, its true. else is false
+    bool secondaryIsDown = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
 
+    command.primaryHeld = primaryIsDown;
+    command.primaryPressed = primaryIsDown && !primaryWasDown; //is down and wasnt last frame
 
-    simulate(gameState, 0, command, deltaTime);
+    command.secondaryHeld = secondaryIsDown;
+    command.secondaryPressed = secondaryIsDown && !secondaryWasDown; //is down and wasnt down last frame
+
+    primaryWasDown = primaryIsDown; //remember for next frame
+    secondaryWasDown = secondaryIsDown;
+
+    simulate(gameState, 0, command, colliders, deltaTime);
+    activeCamera.position = gameState.players[0].position + glm::vec3(0.0f, 1.7f, 0.0f);
 }
 
 void PlayingState::render() {
