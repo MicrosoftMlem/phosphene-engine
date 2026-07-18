@@ -4,4 +4,4 @@
 #include "AABB.h"
 #include <vector>
 
-void simulate(GameState& state, int playerIndex, const InputCommand& command, const std::vector<AABB>& colliders, float deltaTime);
+void simulate(GameState& state, int playerIndex, const InputCommand& command, float deltaTime);

@@ -1,8 +1,11 @@
 #pragma once
 #include <vector>
 #include <glm/glm.hpp>
+#include "AABB.h"
+#include "WorldEntity.h"
 
 class Item; //forward declare
+class WorldEntity; //forward declare
 
 enum class EquipSlot { Weapon, Ability };
 
@@ -24,6 +27,7 @@ struct PlayerState {
     float groundAccel = 12.0f;
     float airAccel = 2.0f;
     bool grounded = false;
+    bool frozen = false;
 
     Item* weapon = nullptr;
     Item* ability = nullptr;
@@ -32,4 +36,6 @@ struct PlayerState {
 
 struct GameState {
     std::vector<PlayerState> players;
+    std::vector<AABB> colliders;
+    std::vector<WorldEntity*> worldEntities;
 };

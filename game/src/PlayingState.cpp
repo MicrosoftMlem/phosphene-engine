@@ -50,9 +50,9 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
 
 void PlayingState::update(float deltaTime) {
         //first update game logic:
-    std::vector<AABB> colliders;
+    gameState.colliders.clear();
     for (GameObject& obj : level.objects) {
-        colliders.push_back(obj.getAABB());
+        gameState.colliders.push_back(obj.getAABB());
     }
 
     InputCommand command;
@@ -84,7 +84,7 @@ void PlayingState::update(float deltaTime) {
     primaryWasDown = primaryIsDown; //remember for next frame
     secondaryWasDown = secondaryIsDown;
 
-    simulate(gameState, 0, command, colliders, deltaTime);
+    simulate(gameState, 0, command, deltaTime);
     activeCamera.position = gameState.players[0].position + glm::vec3(0.0f, 1.7f, 0.0f);
 
 }

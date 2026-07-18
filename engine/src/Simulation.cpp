@@ -14,7 +14,7 @@ static void resolvePlayerCollisions(PlayerState& player, const std::vector<AABB>
 static bool hasLineOfSight(const glm::vec3& from, const glm::vec3& to, const std::vector<AABB>& colliders);
 
 
-void simulate(GameState& state, int playerIndex, const InputCommand& command, const std::vector<AABB>& colliders, float deltaTime) {
+void simulate(GameState& state, int playerIndex, const InputCommand& command, float deltaTime) {
     //std::cout << "deltaTime is: " << deltaTime << std::endl; //endl bc i cba doing newline
     
     PlayerState& player = state.players[playerIndex]; //our players PlayerState
@@ -25,6 +25,7 @@ void simulate(GameState& state, int playerIndex, const InputCommand& command, co
     player.groundAccel = player.baseGroundAccel;
     player.airAccel = player.baseAirAccel;
     player.lookDirection = command.lookDirection;
+    player.frozen = false;
 
 
     if (command.equipWeapon) { //weapons first incase they modify movement (below)
@@ -65,7 +66,7 @@ void simulate(GameState& state, int playerIndex, const InputCommand& command, co
 
     applyMovementInput(player, command, deltaTime); //then movement/collision after we do items (which may modify movement/collision)
     player.velocity.y += player.gravity * deltaTime;
-    resolvePlayerCollisions(player, colliders, deltaTime);
+    resolvePlayerCollisions(player, state.colliders, deltaTime);
 }
 
 //static means 'internal linkage' which means it is only given/seen by this file (its internal)
@@ -78,6 +79,13 @@ static AABB getPlayerAABB(const PlayerState& player) { //calculate the players A
 
 //like handleInput in Player.cpp but uses commands and server can simulate players with it
 static void applyMovementInput(PlayerState& player, const InputCommand& command, float deltaTime) {
+
+    if (player.frozen) {
+        player.velocity.x = 0.0f;
+        player.velocity.z = 0.0f;
+        return;
+    }
+
     glm::vec3 flatFront = command.lookDirection; //flatfront is forward dir WITHOUT up/down tilt
     flatFront.y = 0.0f; //remove like up/down tilt
     flatFront = glm::normalize(flatFront);
