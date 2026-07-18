@@ -2,6 +2,7 @@
 #include "Item.h"
 #include "AABB.h"
 #include <vector>
+#include <iostream>
 
 //simulate is the server-side code
 
@@ -14,6 +15,8 @@ static bool hasLineOfSight(const glm::vec3& from, const glm::vec3& to, const std
 
 
 void simulate(GameState& state, int playerIndex, const InputCommand& command, const std::vector<AABB>& colliders, float deltaTime) {
+    //std::cout << "deltaTime is: " << deltaTime << std::endl; //endl bc i cba doing newline
+    
     PlayerState& player = state.players[playerIndex]; //our players PlayerState
 
     player.moveSpeed = player.baseMoveSpeed; //reset the stats (so items can update them below, or if nothing changes them they're back at defaults)

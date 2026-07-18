@@ -1,2 +1,3 @@
 build/
-vendor/
+#vendor/
+#currently including vendor for ease but can be removed if gets too large

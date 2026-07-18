@@ -10,6 +10,7 @@
 #include "Simulation.h"
 #include "Pistol.h"
 #include "ButterflyKnife.h"
+#include "Level.h"
 
 
 PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member initialisation list. it specifies HOW to construct members before the constructor is run
@@ -21,18 +22,26 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
 {//then this is the constructor
     this->window = window;
     glfwSetWindowUserPointer(window, &activeCamera);
-    worldLightPos = glm::vec3(5.0f, 10.0f, 5.0f);
 
-    //a wide, thin floor in the centre of world, 0.5 below (y)
-    level.push_back(GameObject(&cubeMesh, &texture, glm::vec3(0.0f, -0.5f, 0.0f), glm::vec3(100.0f, 1.0f, 100.0f), glm::vec2(12.0f, 12.0f)));
+    level = loadLevel("test_level.level.json", &cubeMesh, &texture);
 
-    //move objects to test with:
-    level.push_back(GameObject(&cubeMesh, &texture, glm::vec3(3.0f, 0.5f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(1.0f, 1.0f)));
-    level.push_back(GameObject(&cubeMesh, &texture, glm::vec3(-2.0f, 0.5f, 4.0f), glm::vec3(1.0f, 2.0f, 1.0f), glm::vec2(1.0f, 1.0f)));
-    level.push_back(GameObject(&cubeMesh, &texture, glm::vec3(0.0f, 1.0f, -5.0f), glm::vec3(4.0f, 2.0f, 1.0f), glm::vec2(4.0f, 1.0f)));
+    if (!level.lights.empty()) {
+        worldLightPos = level.lights[0]; //set the light pos to the first light in the level
+    }
+    else {
+        worldLightPos = glm::vec3(5.0f, 10.0f, 5.0f); //default light pos if no lights in level
+    }
+
 
     PlayerState player0; //player 0's playerstate
-    player0.position = glm::vec3(0.0f);
+
+    if (!level.spawns.empty()) {
+        player0.position = level.spawns[0]; //spawn at first spawn point
+    }
+    else {
+        player0.position = glm::vec3(0.0f, 2.0f, 0.0f);
+    }
+
     player0.ability = new ButterflyKnife();
     player0.weapon = new Pistol();
     gameState.players.push_back(player0);
@@ -42,7 +51,7 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
 void PlayingState::update(float deltaTime) {
         //first update game logic:
     std::vector<AABB> colliders;
-    for (GameObject& obj : level) {
+    for (GameObject& obj : level.objects) {
         colliders.push_back(obj.getAABB());
     }
 
@@ -113,7 +122,7 @@ void PlayingState::render() {
     glUniform3f(viewPosLoc, activeCamera.position.x, activeCamera.position.y, activeCamera.position.z);
 
 
-    for (GameObject& obj : level) { //for each gameobject in the level
+    for (GameObject& obj : level.objects) { //for each gameobject in the level
         obj.draw(shader);
     }
 }

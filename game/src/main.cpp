@@ -103,6 +103,7 @@ int main() {
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = (float)glfwGetTime(); //seconds since start
         deltaTime = currentFrame - lastFrame;
+        if (deltaTime > 0.05) deltaTime = 0.05; //clamp it to prevent bad behaviour on lag spikes etc
         lastFrame = currentFrame;
 
         

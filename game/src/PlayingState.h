@@ -10,6 +10,7 @@
 #include "Texture.h"
 #include "Mesh.h"
 #include "GameObject.h"
+#include "Level.h"
 
 
 class PlayingState : public GameStateBase {
@@ -26,7 +27,8 @@ private:
     Shader shader;
     Texture texture;
     Mesh cubeMesh;
-    std::vector<GameObject> level;
+    
+    Level level;
 
     bool primaryWasDown = false; //for edge detecting mouse click
     bool secondaryWasDown = false;

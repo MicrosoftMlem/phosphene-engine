@@ -20,7 +20,7 @@ the face. I would define UV's per vertex and the GPU stretches the image between
 
 To generate a placeholder checker texture:
 
-magick -size 512x512 pattern:checkerboard -auto-level -colorspace sRGB +level-colors "#9BC9D0","#F0EDE6" checker.png
+magick -size 512x512 pattern:checkerboard +level-colors "#181818","#444444" -depth 8 PNG32:checker.png
 
 and just change the hexcodes for the colour
 

@@ -21,7 +21,8 @@ Texture::Texture(const char* path) {
     unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0); //decodes the data and stores it into the references variables
     //nrChannels = 3 for RGB, 4 for RGBA
 
-    if (data) { //stb returns null on failure so we check it worked
+    //checking if nrChannels == 3/4 makes sure its right format. otherwise seg fault
+    if (data && (nrChannels == 3 || nrChannels == 4)) { //stb returns null on failure so we check it worked
         GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB; //check if image has an alpha channel. means: 'if 4 channels, RGBA, else RGB'
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data); //give the pixel data to the GPU as a texture
         //the args for above are: target, mipmap level (0 = base), how GL stores it, width, height, 0 (legacy border, always 0)
@@ -29,7 +30,7 @@ Texture::Texture(const char* path) {
         glGenerateMipmap(GL_TEXTURE_2D); //auto creates mipmaps - read textures.md
     }
     else {
-        std::cout << "TEXTURE FAILED TO LOAD: " << path << "\n";
+        std::cout << "TEXTURE FAILED TO LOAD: " << path << " IS THIS FORMAT CORRECT?: " << nrChannels << "\n";
     }
 
     stbi_image_free(data); //stb put all that data on the heap, so now thats its in the GPU, free it from the heap
