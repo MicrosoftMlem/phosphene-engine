@@ -4,4 +4,6 @@
 #include "AABB.h"
 #include <vector>
 
-void simulate(GameState& state, int playerIndex, const InputCommand& command, float deltaTime);
+void processPlayerInput(GameState& state, int playerIndex, const InputCommand& command, float deltaTime);
+void updateWorld(GameState& state, const std::vector<glm::vec3>& spawns, float deltaTime);
+void resetPlayerStats(PlayerState& player);

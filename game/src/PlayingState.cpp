@@ -26,9 +26,9 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
     this->window = window;
     glfwSetWindowUserPointer(window, &activeCamera);
 
-    level = loadLevel("test_level.level.json", &cubeMesh, &texture);
-    //add test mesh:
-    level.objects.push_back(GameObject(&testMesh, &texture, glm::vec3(5.0f, 1.0f, 0.0f), glm::vec3(1.0f, 2.0f, 1.0f), glm::vec2(1.0f)));
+    level = loadLevel("test1v1level.level.json", &cubeMesh, &texture);
+    //add test mesh: //now its a cube for seeing hitbox
+    level.objects.push_back(GameObject(&cubeMesh, &texture, level.spawns[1], glm::vec3(0.6f, 1.8f, 0.6f), glm::vec2(1.0f)));
     level.objects.back().collidable = false; //.back() is the last entry added
 
     if (!level.lights.empty()) {
@@ -49,12 +49,12 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
     }
 
     player0.weapon = new Pistol(); //not actually an ability but just for testing
-    player0.ability = new ButterflyKnife();
+    player0.ability = new TrafficLight();
     gameState.players.push_back(player0);
 
 
     PlayerState player1;
-    player1.position = glm::vec3(5.0f, 0.0f, 0.0f);
+    player1.position = level.spawns[1];
     gameState.players.push_back(player1);
 }
 
@@ -97,7 +97,17 @@ void PlayingState::update(float deltaTime) {
     primaryWasDown = primaryIsDown; //remember for next frame
     secondaryWasDown = secondaryIsDown;
 
-    simulate(gameState, 0, command, deltaTime);
+    //reset player stats
+    for (int i = 0; i < gameState.players.size(); i++) {
+        resetPlayerStats(gameState.players[i]);
+    }
+
+    //world update
+    updateWorld(gameState, level.spawns, deltaTime);
+
+    //per player input/movement
+    processPlayerInput(gameState, 0, command, deltaTime);
+
     activeCamera.position = gameState.players[0].position + glm::vec3(0.0f, 1.7f, 0.0f);
 
 }

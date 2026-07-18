@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <glm/glm.hpp>
+#include <iostream>
 #include "AABB.h"
 #include "WorldEntity.h"
 
@@ -8,6 +9,8 @@ class Item; //forward declare
 class WorldEntity; //forward declare
 
 enum class EquipSlot { Weapon, Ability };
+
+enum class RoundPhase { Active, RoundOver, MatchOver };
 
 struct PlayerState {
     glm::vec3 position = glm::vec3(0.0f);
@@ -38,4 +41,10 @@ struct GameState {
     std::vector<PlayerState> players;
     std::vector<AABB> colliders;
     std::vector<WorldEntity*> worldEntities;
+
+    RoundPhase phase = RoundPhase::Active;
+    int roundWins[2] = {0, 0};
+    float phaseTimer = 0.0f;
+    int matchWinner = -1; 
 };
+

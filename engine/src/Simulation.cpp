@@ -14,20 +14,16 @@
 static AABB getPlayerAABB(const PlayerState& player);
 static void applyMovementInput(PlayerState& player, const InputCommand& command, float deltaTime);
 static void resolvePlayerCollisions(PlayerState& player, const std::vector<AABB>& colliders, float deltaTime);
+static void updateRound(GameState& state, const std::vector<glm::vec3>& spawns, float deltaTime);
+static void resetRound(GameState& state, const std::vector<glm::vec3> spawns);
 
 
-void simulate(GameState& state, int playerIndex, const InputCommand& command, float deltaTime) {
-    //std::cout << "deltaTime is: " << deltaTime << std::endl; //endl bc i cba doing newline
+void processPlayerInput(GameState& state, int playerIndex, const InputCommand& command, float deltaTime) {
+    if (state.phase != RoundPhase::Active) return; //if match is not active, dont allow movement
     
     PlayerState& player = state.players[playerIndex]; //our players PlayerState
 
-    player.moveSpeed = player.baseMoveSpeed; //reset the stats (so items can update them below, or if nothing changes them they're back at defaults)
-    player.jumpStrength = player.baseJumpStrength;
-    player.gravity = player.baseGravity;
-    player.groundAccel = player.baseGroundAccel;
-    player.airAccel = player.baseAirAccel;
     player.lookDirection = command.lookDirection;
-    player.frozen = false;
 
 
     if (command.equipWeapon) { //weapons first incase they modify movement (below)
@@ -66,20 +62,6 @@ void simulate(GameState& state, int playerIndex, const InputCommand& command, fl
         }
     }
 
-    for (WorldEntity* entity : state.worldEntities) {
-        entity->update(state, deltaTime);
-    }
-
-    for (WorldEntity*& entity : state.worldEntities) {
-        if (entity->isExpired()) {
-            delete entity; //free its memory
-            entity = nullptr; //mark it as dead to us
-        }
-    }
-    state.worldEntities.erase(
-        std::remove(state.worldEntities.begin(), state.worldEntities.end(), nullptr), //move all the nullptr entries to the end
-        state.worldEntities.end() //then remove the end chunk (the nullptrs)
-    );
 
     applyMovementInput(player, command, deltaTime); //then movement/collision after we do items (which may modify movement/collision)
     player.velocity.y += player.gravity * deltaTime;
@@ -87,6 +69,38 @@ void simulate(GameState& state, int playerIndex, const InputCommand& command, fl
 
 }
 
+
+void resetPlayerStats(PlayerState& player) {
+    player.moveSpeed = player.baseMoveSpeed; //reset the stats (so items can update them below, or if nothing changes them they're back at defaults)
+    player.jumpStrength = player.baseJumpStrength;
+    player.gravity = player.baseGravity;
+    player.groundAccel = player.baseGroundAccel;
+    player.airAccel = player.baseAirAccel;
+    player.frozen = false;
+}
+
+
+void updateWorld(GameState& state, const std::vector<glm::vec3>& spawns, float deltaTime) {
+    //tick all world entities
+    for (WorldEntity* entity : state.worldEntities) {
+        entity->update(state, deltaTime);
+    }
+
+
+    for (WorldEntity*& entity : state.worldEntities) {
+        if (entity->isExpired()) {
+            delete entity;
+            entity = nullptr; //set it to a nullptr to mark it as dead to us
+        }
+    }
+
+    state.worldEntities.erase( //move all nullptrs to end, then remove that end chunk
+        std::remove(state.worldEntities.begin(), state.worldEntities.end(), nullptr),
+        state.worldEntities.end()
+    );
+
+    updateRound(state, spawns, deltaTime);
+}
 
 //static means 'internal linkage' which means it is only given/seen by this file (its internal)
 static AABB getPlayerAABB(const PlayerState& player) { //calculate the players AABB collision, relative to world coords
@@ -199,6 +213,99 @@ static void resolvePlayerCollisions(PlayerState& player, const std::vector<AABB>
             }
             player.velocity.z = 0.0f;
         }
+    }
+}
+
+
+
+
+static void resetRound(GameState& state, const std::vector<glm::vec3> spawns) {
+    for (int i = 0; i < state.players.size(); i++) {
+        state.players[i].health = 120.0f;
+        state.players[i].velocity = glm::vec3(0.0f);
+        if (i < (int)spawns.size()) state.players[i].position = spawns[i];
+    }
+
+    for (WorldEntity* e : state.worldEntities) delete e;
+    state.worldEntities.clear();
+}
+
+static void updateRound(GameState& state, const std::vector<glm::vec3>& spawns, float deltaTime) {
+    if (state.phase == RoundPhase::Active) { //is match is ongoing
+
+        int winner = -1;
+
+        for (int i = 0; i < state.players.size(); i++) {
+            if (state.players[i].health <= 0) {
+                if (winner != -1) { //if both have died at same time (in the same tick, winner has already been set means both died)
+                    winner = 2;
+                }
+                else {
+                    winner = (i == 0) ? 1 : 0; // if this player (i) is 1, winner is 0 and vice versa
+                }
+                
+            }
+        }
+        if (winner == -1) {
+            return; //round isnt over
+        }
+
+        if (winner == 2) {
+            state.roundWins[0] += 1; //set both forward 1 if both drew
+            state.roundWins[1] += 1;
+        }
+        else if (winner != -1) {
+            state.roundWins[winner] += 1;
+        }
+        std::cout << "score is: " << state.roundWins[0] << " - " << state.roundWins[1] << "\n";
+
+        int a = state.roundWins[0];
+        int b = state.roundWins[1];
+
+        //see who wins (or has nobody won:)
+        if (a >= 7 && a - b >= 2) {
+            state.matchWinner = 0;
+            state.phase = RoundPhase::MatchOver;
+            std::cout << "MATCH OVER with score: " << state.roundWins[0] << " - " << state.roundWins[1] << " and winner: " << state.matchWinner << "\n";
+        }
+        else if (b >= 7 && b - a >= 2) {
+            state.matchWinner = 1;
+            state.phase = RoundPhase::MatchOver;
+            std::cout << "MATCH OVER with score: " << state.roundWins[0] << " - " << state.roundWins[1] << " and winner: " << state.matchWinner << "\n";
+        }
+        else if ((a + b) >= 20) { //cap reached
+            if (a > b) {
+                state.matchWinner = 0;
+                state.phase = RoundPhase::MatchOver;
+                std::cout << "MATCH OVER with score: " << state.roundWins[0] << " - " << state.roundWins[1] << " and winner: " << state.matchWinner << "\n";
+            }
+            else if (b > a) {
+                state.matchWinner = 1;
+                state.phase = RoundPhase::MatchOver;
+                std::cout << "MATCH OVER with score: " << state.roundWins[0] << " - " << state.roundWins[1] << " and winner: " << state.matchWinner << "\n";
+            }
+            else {
+                state.matchWinner = -1;
+                state.phase = RoundPhase::MatchOver;
+                std::cout << "MATCH OVER with score: " << state.roundWins[0] << " - " << state.roundWins[1] << " and winner: " << state.matchWinner << "\n";
+            }
+        }
+        else {
+            state.phase = RoundPhase::RoundOver;
+            state.phaseTimer = 2.0f;
+        }
+    }
+
+    else if (state.phase == RoundPhase::RoundOver) {
+        state.phaseTimer -= deltaTime;
+        if (state.phaseTimer <= 0) {
+            resetRound(state, spawns);
+            state.phase = RoundPhase::Active;
+        }
+    }
+
+    else if (state.phase == RoundPhase::MatchOver) {
+        //nothing yet
     }
 }
 
