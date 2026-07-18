@@ -27,6 +27,8 @@ private:
     Shader shader;
     Texture texture;
     Mesh cubeMesh;
+
+    Mesh testMesh;
     
     Level level;
 

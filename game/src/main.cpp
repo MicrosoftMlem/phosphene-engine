@@ -18,6 +18,7 @@
 #include "Simulation.h"
 #include "PlayingState.h"
 #include "GameStateBase.h"
+#include "OBJLoader.h"
 
 /*
 when we are telling the gpu to do stuff we have 2 things:
@@ -99,6 +100,8 @@ int main() {
 
     GameStateBase* currentState = new PlayingState(window); //so to change states we just change this
 
+
+    loadOBJ("cube.obj"); //load a test cube
 
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = (float)glfwGetTime(); //seconds since start

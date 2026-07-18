@@ -11,19 +11,24 @@
 #include "Pistol.h"
 #include "ButterflyKnife.h"
 #include "Level.h"
+#include "TrafficLight.h"
+#include "OBJLoader.h"
 
 
 PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member initialisation list. it specifies HOW to construct members before the constructor is run
     : shader("basic.vert", "basic.frag"),
       texture("checker.png"),
       cubeMesh(computeNormals(Primitive::rawCubeVertices)),
-      activeCamera(glm::vec3(0.0f, 0.0f, 3.0f))
+      activeCamera(glm::vec3(0.0f, 0.0f, 3.0f)),
+      testMesh(loadOBJ("sphere.obj"))
 
 {//then this is the constructor
     this->window = window;
     glfwSetWindowUserPointer(window, &activeCamera);
 
     level = loadLevel("test_level.level.json", &cubeMesh, &texture);
+    //add test mesh:
+    level.objects.push_back(GameObject(&testMesh, &texture, glm::vec3(10.0f, 6.0f, 0.0f), glm::vec3(1.0f), glm::vec2(1.0f)));
 
     if (!level.lights.empty()) {
         worldLightPos = level.lights[0]; //set the light pos to the first light in the level
@@ -42,8 +47,8 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
         player0.position = glm::vec3(0.0f, 2.0f, 0.0f);
     }
 
+    player0.weapon = new TrafficLight(); //not actually an ability but just for testing
     player0.ability = new ButterflyKnife();
-    player0.weapon = new Pistol();
     gameState.players.push_back(player0);
 }
 
@@ -94,7 +99,7 @@ void PlayingState::render() {
 
     shader.use();
 
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f); //sets what colour to wipe the screen to (teal). doesnt draw yet
+    glClearColor(0.0f, 0.0f, 0.0f, 0.77f); //sets what colour to wipe the screen to (teal). doesnt draw yet
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //color buffer actually wipes screen with above set color. every frame starts with this to cover previous frame. and depth buffer also tells it to clear the depth buffer
     //since GL_COLOR_BUFFER_BIT and GL_DEPTH_BUFFER_BIT are bit flags, we can combine them with |
