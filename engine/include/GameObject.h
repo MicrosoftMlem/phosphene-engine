@@ -13,6 +13,8 @@ public:
     Texture* texture;
     glm::vec2 textureScale;
 
+    bool collidable = true;
+
     GameObject(Mesh* mesh, Texture* texture, glm::vec3 position, glm::vec3 size, glm::vec2 textureScale);
 
     AABB getAABB();

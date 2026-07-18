@@ -29,6 +29,7 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
     level = loadLevel("test_level.level.json", &cubeMesh, &texture);
     //add test mesh:
     level.objects.push_back(GameObject(&testMesh, &texture, glm::vec3(10.0f, 6.0f, 0.0f), glm::vec3(1.0f), glm::vec2(1.0f)));
+    level.objects.back().collidable = false; //.back() is the last entry added
 
     if (!level.lights.empty()) {
         worldLightPos = level.lights[0]; //set the light pos to the first light in the level
@@ -57,7 +58,9 @@ void PlayingState::update(float deltaTime) {
         //first update game logic:
     gameState.colliders.clear();
     for (GameObject& obj : level.objects) {
-        gameState.colliders.push_back(obj.getAABB());
+        if (obj.collidable) {
+            gameState.colliders.push_back(obj.getAABB());
+        }
     }
 
     InputCommand command;
