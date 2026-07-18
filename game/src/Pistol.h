@@ -6,6 +6,7 @@ class Pistol : public Item {
 public:
     void use(GameState& state, int holderIndex, UseType type) override; //say that this declaration overrides Item classes one
     int ammo = 18;
+    int damage = 12;
 
 private:
     virtual void tickInternal(float deltaTime);

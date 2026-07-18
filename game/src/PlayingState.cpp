@@ -28,7 +28,7 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
 
     level = loadLevel("test_level.level.json", &cubeMesh, &texture);
     //add test mesh:
-    level.objects.push_back(GameObject(&testMesh, &texture, glm::vec3(10.0f, 6.0f, 0.0f), glm::vec3(1.0f), glm::vec2(1.0f)));
+    level.objects.push_back(GameObject(&testMesh, &texture, glm::vec3(5.0f, 1.0f, 0.0f), glm::vec3(1.0f, 2.0f, 1.0f), glm::vec2(1.0f)));
     level.objects.back().collidable = false; //.back() is the last entry added
 
     if (!level.lights.empty()) {
@@ -48,9 +48,14 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
         player0.position = glm::vec3(0.0f, 2.0f, 0.0f);
     }
 
-    player0.weapon = new TrafficLight(); //not actually an ability but just for testing
+    player0.weapon = new Pistol(); //not actually an ability but just for testing
     player0.ability = new ButterflyKnife();
     gameState.players.push_back(player0);
+
+
+    PlayerState player1;
+    player1.position = glm::vec3(5.0f, 0.0f, 0.0f);
+    gameState.players.push_back(player1);
 }
 
 
@@ -132,5 +137,16 @@ void PlayingState::render() {
 
     for (GameObject& obj : level.objects) { //for each gameobject in the level
         obj.draw(shader);
+    }
+
+    for (WorldEntity* entity : gameState.worldEntities) {
+
+        glm::mat4 model = glm::mat4(1.0f); //identity
+        model = glm::translate(model, entity->position); //move it to the entities pos
+
+        int modelLoc = glGetUniformLocation(shader.ID, "model"); //get the modelLoc var in the shader
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model)); //tell the shader its pos (model)
+
+        cubeMesh.draw(); //draw the cube
     }
 }

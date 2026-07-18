@@ -6,6 +6,8 @@ public:
     TrafficLightEntity(glm::vec3 pos, int owner);
     void update(GameState& state, float deltaTime) override;
     bool isExpired() const override;
+    virtual EntityType getType() const override;
+    
 private:
     float timer = 0.0f;
     bool isRed = false;

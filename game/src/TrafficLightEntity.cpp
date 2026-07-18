@@ -43,3 +43,8 @@ bool TrafficLightEntity::isExpired() const {
     }
     return false;
 }
+
+
+EntityType TrafficLightEntity::getType() const {
+    return EntityType::TrafficLight;
+}
