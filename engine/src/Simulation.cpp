@@ -114,11 +114,6 @@ static AABB getPlayerAABB(const PlayerState& player) { //calculate the players A
 //like handleInput in Player.cpp but uses commands and server can simulate players with it
 static void applyMovementInput(PlayerState& player, const InputCommand& command, float deltaTime) {
 
-    if (player.frozen) {
-        player.velocity.x = 0.0f;
-        player.velocity.z = 0.0f;
-        return;
-    }
 
     glm::vec3 flatFront = command.lookDirection; //flatfront is forward dir WITHOUT up/down tilt
     flatFront.y = 0.0f; //remove like up/down tilt
@@ -126,18 +121,22 @@ static void applyMovementInput(PlayerState& player, const InputCommand& command,
     glm::vec3 flatRight = glm::normalize(glm::cross(flatFront, glm::vec3(0, 1, 0))); //get flatRight from cross product
 
     glm::vec3 moveDir = glm::vec3(0.0f); //a vector of our movement input (will be normalized)
-    if (command.moveForward) {
-        moveDir += flatFront;
+
+    if (!player.frozen) { //only do input if player is not frozen
+        if (command.moveForward) {
+            moveDir += flatFront;
+        }
+        if (command.moveBack) {
+            moveDir -= flatFront;
+        }
+        if (command.moveLeft) {
+            moveDir -= flatRight;
+        }
+        if (command.moveRight) {
+            moveDir += flatRight;
+        }
     }
-    if (command.moveBack) {
-        moveDir -= flatFront;
-    }
-    if (command.moveLeft) {
-        moveDir -= flatRight;
-    }
-    if (command.moveRight) {
-        moveDir += flatRight;
-    }
+
 
     if (glm::length(moveDir) > 0.0f) { //if there is movement input
         moveDir = glm::normalize(moveDir);
@@ -157,7 +156,7 @@ static void applyMovementInput(PlayerState& player, const InputCommand& command,
     player.velocity.z = glm::mix(player.velocity.z, targetVel.z, t);
 
 
-    if (command.jump && player.grounded) { //jump
+    if (command.jump && player.grounded && !player.frozen) { //jump
         player.velocity.y = player.jumpStrength;
     }
 }

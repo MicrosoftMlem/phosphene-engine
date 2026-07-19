@@ -12,6 +12,9 @@ uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
 
+uniform vec3 tint;
+uniform vec3 emissive;
+
 //sampler2D is a uniform type which is a handle to a texture unit
 void main() {
     //sample the base color (without lighting)
@@ -34,8 +37,9 @@ void main() {
     vec3 specular = specularStrength * spec * lightColor;
 
 
+    vec3 litColor = (ambient + diffuse + specular) * objectColor * tint; //tint multiplies
+    vec3 finalColor = litColor + emissive; //emissive adds
+    FragColor = vec4(finalColor, 1.0);
 
-    vec3 result = (ambient + diffuse + specular) * objectColor;
-    FragColor = vec4(result, 1.0);
     //FragColor = vec4(normalize(Normal)*0.5+0.5, 1.0); //debug to show normals
 }

@@ -13,6 +13,7 @@
 #include "Level.h"
 #include "TrafficLight.h"
 #include "OBJLoader.h"
+#include "Material.h"
 
 
 PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member initialisation list. it specifies HOW to construct members before the constructor is run
@@ -28,7 +29,13 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
 
     level = loadLevel("test1v1level.level.json", &cubeMesh, &texture);
     //add test mesh: //now its a cube for seeing hitbox
-    level.objects.push_back(GameObject(&cubeMesh, &texture, level.spawns[1], glm::vec3(0.6f, 1.8f, 0.6f), glm::vec2(1.0f)));
+
+    Material mat;
+    mat.texture = &texture;
+    mat.textureScale = glm::vec2(1.0f);
+    mat.emissive = glm::vec3(0.0f, 1.0f, 0.0f);
+
+    level.objects.push_back(GameObject(&cubeMesh, mat, level.spawns[1], glm::vec3(0.6f, 1.8f, 0.6f)));
     level.objects.back().collidable = false; //.back() is the last entry added
 
     if (!level.lights.empty()) {
@@ -48,14 +55,16 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
         player0.position = glm::vec3(0.0f, 2.0f, 0.0f);
     }
 
-    player0.weapon = new Pistol(); //not actually an ability but just for testing
-    player0.ability = new TrafficLight();
+
     gameState.players.push_back(player0);
 
 
     PlayerState player1;
     player1.position = level.spawns[1];
     gameState.players.push_back(player1);
+
+    giveRoundItems(gameState.players[0]);
+    giveRoundItems(gameState.players[1]);
 }
 
 
@@ -104,6 +113,13 @@ void PlayingState::update(float deltaTime) {
 
     //world update
     updateWorld(gameState, level.spawns, deltaTime);
+
+    //we do this after updateWorld incase updateWorld changes phase
+    if (previousPhase == RoundPhase::RoundOver && gameState.phase == RoundPhase::Active) {
+        giveRoundItems(gameState.players[0]);
+        giveRoundItems(gameState.players[1]);
+    }
+    previousPhase = gameState.phase;
 
     //per player input/movement
     processPlayerInput(gameState, 0, command, deltaTime);
@@ -159,4 +175,14 @@ void PlayingState::render() {
 
         cubeMesh.draw(); //draw the cube
     }
+}
+
+
+void giveRoundItems(PlayerState& player) {
+    delete player.weapon;
+    delete player.ability;
+
+    player.weapon = new Pistol();
+    player.ability = new TrafficLight();
+    player.equipped = EquipSlot::Weapon;
 }

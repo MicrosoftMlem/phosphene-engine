@@ -1,5 +1,7 @@
 #pragma once
 
+//theres no cpp file for this? im not sure why i made it
+
 //actual game state machine
 
 class GameStateBase {

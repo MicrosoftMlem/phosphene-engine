@@ -5,12 +5,11 @@
 #include "GameObject.h"
 #include "AABB.h"
 
-GameObject::GameObject(Mesh* mesh, Texture* texture, glm::vec3 position, glm::vec3 size, glm::vec2 textureScale) {
+GameObject::GameObject(Mesh* mesh, Material material, glm::vec3 position, glm::vec3 size) {
     this->mesh = mesh; //bc mesh is an arg but also we have the member 'mesh' we use -> to specify its our member
     this->position = position;
     this->size = size;
-    this->texture = texture;
-    this->textureScale = textureScale;
+    this->material = material;
 
 }
 
@@ -30,9 +29,18 @@ void GameObject::draw(Shader& shader) {
     int modelLoc = glGetUniformLocation(shader.ID, "model"); //get the shader model uniform
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model)); //store the model matrix in the uniform
 
-    texture->bind(); //bind the texture
+    if (material.texture) {
+        material.texture->bind(); //bind the texture
+    }
+
+    int tintLoc = glGetUniformLocation(shader.ID, "tint");
+    glUniform3f(tintLoc, material.tint.r, material.tint.g, material.tint.b);
+
+    int emissiveLoc = glGetUniformLocation(shader.ID, "emissive");
+    glUniform3f(emissiveLoc, material.emissive.r, material.emissive.g, material.emissive.b);
+
     int scaleLoc = glGetUniformLocation(shader.ID, "textureScale"); //get the texture scale uniform
-    glUniform2fv(scaleLoc, 1, glm::value_ptr(textureScale)); //set it to textureScale
+    glUniform2f(scaleLoc, material.textureScale.x, material.textureScale.y); //set it to the materials textureScale
 
     mesh->draw(); //tell the mesh to draw '->' for same reason as comment at top
 }

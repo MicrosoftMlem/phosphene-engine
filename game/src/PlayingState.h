@@ -34,4 +34,8 @@ private:
 
     bool primaryWasDown = false; //for edge detecting mouse click
     bool secondaryWasDown = false;
+
+    RoundPhase previousPhase = RoundPhase::Active;
 };
+
+void giveRoundItems(PlayerState& player);

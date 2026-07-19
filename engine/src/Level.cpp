@@ -1,4 +1,5 @@
 #include "Level.h"
+#include "Material.h"
 #include <glm/glm.hpp>
 #include <nlohmann/json.hpp>
 #include <fstream>
@@ -27,7 +28,10 @@ Level loadLevel(const std::string& path, Mesh* mesh, Texture* texture) {
         glm::vec3 size = max - min;
         glm::vec2 textureScale = glm::vec2(size.x, size.z) / 8.0f; //scale the texture to the size of the box
 
-        level.objects.push_back(GameObject(mesh, texture, centre, size, textureScale));
+        Material mat;
+        mat.texture = texture;
+        mat.textureScale = textureScale;
+        level.objects.push_back(GameObject(mesh, mat, centre, size));
     }
 
     for (const auto& spawn : data["spawns"]) {
