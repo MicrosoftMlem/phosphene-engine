@@ -198,6 +198,15 @@ void PlayingState::render() {
         }
 
     }
+
+    //ui pass which is ontop so disable depth test
+    glDisable(GL_DEPTH_TEST);
+
+    //w and h are already defined earlier in the func so we reuse them:
+    glfwGetFramebufferSize(window, &w, &h);
+    uiRenderer.drawRect(50.0f, 50.0f, 200.0f, 30.0f, glm::vec4(1.0f, 0.0f, 0.0f, 0.9f), w, h);
+
+    glEnable(GL_DEPTH_TEST); //re-enable it for the next frames 3d
 }
 
 

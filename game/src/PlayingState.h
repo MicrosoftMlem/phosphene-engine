@@ -11,6 +11,7 @@
 #include "Mesh.h"
 #include "GameObject.h"
 #include "Level.h"
+#include "UIRenderer.h"
 
 
 class PlayingState : public GameStateBase {
@@ -29,11 +30,13 @@ private:
     Mesh cubeMesh;
 
     Mesh testMesh;
-    
+
     Mesh trafficLightMesh;
     Texture trafficLightTexture;
     
     Level level;
+
+    UIRenderer uiRenderer;
 
     bool primaryWasDown = false; //for edge detecting mouse click
     bool secondaryWasDown = false;

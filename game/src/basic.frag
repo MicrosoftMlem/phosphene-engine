@@ -35,7 +35,7 @@ void main() {
     float specularStrength = 0.5f;
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm); //where the light bounces off the surface
-    float spec = pow(max(dot(viewDir, reflectDir), 0.1), 28.0); //pow 32 is shinyness, max(dot(...)) is how directly the reflection points in your eye
+    float spec = pow(max(dot(viewDir, reflectDir), 0.1), 24.0); //pow 32 is shinyness, max(dot(...)) is how directly the reflection points in your eye
     vec3 specular = specularStrength * spec * lightColor;
 
 
