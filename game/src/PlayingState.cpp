@@ -173,6 +173,14 @@ void PlayingState::render() {
         int modelLoc = glGetUniformLocation(shader.ID, "model"); //get the modelLoc var in the shader
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model)); //tell the shader its pos (model)
 
+        Material& m = entity->material;
+        if (m.texture) m.texture->bind(); //if we have a texture, bind it
+        else texture.bind(); //just 'texture' is our checkerboard texture
+
+        glUniform3f(glGetUniformLocation(shader.ID, "tint"), m.tint.r, m.tint.g, m.tint.b);
+        glUniform3f(glGetUniformLocation(shader.ID, "emissive"), m.emissive.r, m.emissive.g, m.emissive.b);
+        glUniform2f(glGetUniformLocation(shader.ID, "textureScale"), m.textureScale.x, m.textureScale.y);
+
         cubeMesh.draw(); //draw the cube
     }
 }

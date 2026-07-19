@@ -18,7 +18,9 @@ uniform vec3 emissive;
 //sampler2D is a uniform type which is a handle to a texture unit
 void main() {
     //sample the base color (without lighting)
-    vec3 objectColor = texture(ourTexture, TexCoord * textureScale).rgb; //maps ourTexture to the UV coords from TexCoord and scales the UVs
+    vec4 texSample = texture(ourTexture, TexCoord * textureScale); //maps ourTexture to the UV coords from TexCoord and scales the UVs
+    vec3 objectColor = texSample.rgb; //actual visuals are only in the rgb channels, not alpha
+    float mask = texSample.a; //emissive mask is defined by the alpha layer
     
     //now diffuse lighting
     vec3 norm = normalize(Normal);
@@ -38,7 +40,7 @@ void main() {
 
 
     vec3 litColor = (ambient + diffuse + specular) * objectColor * tint; //tint multiplies
-    vec3 finalColor = litColor + emissive; //emissive adds
+    vec3 finalColor = litColor + emissive * mask; //emissive adds, and is controlled by the emissive mask
     FragColor = vec4(finalColor, 1.0);
 
     //FragColor = vec4(normalize(Normal)*0.5+0.5, 1.0); //debug to show normals
