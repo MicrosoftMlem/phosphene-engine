@@ -174,6 +174,7 @@ void PlayingState::render() {
 
             glm::mat4 model = glm::mat4(1.0f); //identity
             model = glm::translate(model, entity->position); //move it to the entities pos
+            model = glm::rotate(model, tl->getRotationY(), glm::vec3(0.0f, 1.0f, 0.0f)); //cosmetic y spin
 
             int modelLoc = glGetUniformLocation(shader.ID, "model"); //get the modelLoc var in the shader
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model)); //tell the shader its pos (model)

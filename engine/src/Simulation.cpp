@@ -164,14 +164,25 @@ static void applyMovementInput(PlayerState& player, const InputCommand& command,
 
 // same as resolveCollisions in Player.cpp but using commands for server
 static void resolvePlayerCollisions(PlayerState& player, const std::vector<AABB>& colliders, float deltaTime) {
-    player.position += player.velocity * deltaTime; //move on all axis first
+    player.grounded = resolveAABBCollision(player.position, player.velocity, glm::vec3(-0.3f, 0.0f, -0.3f), glm::vec3(0.3, 1.8f, 0.3f), colliders, deltaTime);
+    //that call does everything for us and returns grounded
+}
 
-    player.grounded = false; //assume airborne
+
+
+bool resolveAABBCollision(glm::vec3& position, glm::vec3& velocity, glm::vec3 boxMin, glm::vec3 boxMax, const std::vector<AABB>& colliders, float deltaTime) {
+    position += velocity * deltaTime; //move on all axis first
+
+    bool grounded = false; //assume airborne
 
     for (const AABB& c : colliders) { //for each collider
-        AABB box = getPlayerAABB(player); //get our players AABB collider
+        AABB box;
+        box.min = position + boxMin;
+        box.max = position + boxMax;
+
+
         if (!aabbOverlap(box, c)) {
-            continue; //no overlap so this this in the for loop
+            continue; //no overlap so skip this collider in the for loop
         }
 
         //get the depth of penetration on each axis, positive means its penetrating
@@ -186,35 +197,36 @@ static void resolvePlayerCollisions(PlayerState& player, const std::vector<AABB>
 
         if (px < py && px < pz) { //if x is the shallowest penetration
             if (boxCentre.x < cCentre.x) { //player is on -X side
-                player.position.x -= px;
+                position.x -= px;
             }
             else { //player is on +X side
-                player.position.x += px;
+                position.x += px;
             }
-            player.velocity.x = 0.0f;
+            velocity.x = 0.0f;
         }
         else if (py < pz) { //if Y is shallowest
             if (boxCentre.y < cCentre.y) { //player is below so push down
-                player.position.y -= py;
+                position.y -= py;
             }
             else {
-                player.position.y += py; //the player is grounded so much up
-                player.grounded = true;
+                position.y += py; //the player is grounded so much up
+                grounded = true;
             }
-            player.velocity.y = 0.0f;
+            velocity.y = 0.0f;
         }
         else { //z is the shallowest
             if (boxCentre.z < cCentre.z) {
-                player.position.z -= pz;
+                position.z -= pz;
             }
             else {
-                player.position.z += pz;
+                position.z += pz;
             }
-            player.velocity.z = 0.0f;
+            velocity.z = 0.0f;
         }
     }
-}
 
+    return grounded;
+}
 
 
 

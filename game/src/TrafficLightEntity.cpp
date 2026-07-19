@@ -1,6 +1,7 @@
 #include "TrafficLightEntity.h"
 #include "GameState.h"
 #include "Utils.h"
+#include "Simulation.h"
 #include <iostream>
 
 
@@ -12,6 +13,32 @@ TrafficLightEntity::TrafficLightEntity(glm::vec3 pos, int owner) {
 
 
 void TrafficLightEntity::update(GameState& state, float deltaTime) {
+    //physics pass:
+
+    velocity.y += -20 * deltaTime; //gravity
+
+    glm::vec3 boxMin = glm::vec3(-0.3f, 0.0f, -0.3f); //size of the 3d model (might need tuning)
+    glm::vec3 boxMax = glm::vec3(0.3f, 1.0f, 0.3f);
+
+    //this does all the actual physics
+    bool grounded = resolveAABBCollision(position, velocity, boxMin, boxMax, state.colliders, deltaTime);
+    
+    if (grounded) {
+        velocity.x *= 0.9f;
+        velocity.z *= 0.9;
+        spinSpeed *= 0.9;
+
+        if (glm::length(glm::vec3(velocity.x, 0.0f, velocity.z)) < 0.1f) { //if we have basically stopped
+            velocity.x = 0.0f;
+            velocity.z = 0.0f;
+            spinSpeed = 0.0f;
+            settled = true;
+        }
+    }
+
+    rotationY += spinSpeed * deltaTime;
+
+    //timer stuff:
     timer += deltaTime;
     lifetime -= deltaTime;
 
@@ -28,7 +55,7 @@ void TrafficLightEntity::update(GameState& state, float deltaTime) {
                 glm::vec3 eyePos = player.position + glm::vec3(0.0f, 1.7f, 0.0f);
 
                 if (hasLineOfSight(eyePos, position, state.colliders)) {
-                    std::cout << "Traffic light is red, and player is frozen.\n";
+                    //std::cout << "Traffic light is red, and player is frozen.\n";
                     player.frozen = true;
                 }
             }
@@ -48,4 +75,9 @@ bool TrafficLightEntity::isExpired() const {
 
 EntityType TrafficLightEntity::getType() const {
     return EntityType::TrafficLight;
+}
+
+void TrafficLightEntity::throwFrom(glm::vec3 direction, float speed, float spin) {
+    velocity = direction * speed;
+    spinSpeed = spin;
 }
