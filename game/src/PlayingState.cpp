@@ -14,6 +14,7 @@
 #include "TrafficLight.h"
 #include "OBJLoader.h"
 #include "Material.h"
+#include "TrafficLightEntity.h"
 
 
 PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member initialisation list. it specifies HOW to construct members before the constructor is run
@@ -21,7 +22,9 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
       texture("checker.png"),
       cubeMesh(computeNormals(Primitive::rawCubeVertices)),
       activeCamera(glm::vec3(0.0f, 0.0f, 3.0f)),
-      testMesh(loadOBJ("sphere.obj"))
+      testMesh(loadOBJ("sphere.obj")),
+      trafficLightMesh(loadOBJ("trafficLightEntity.obj")),
+      trafficLightTexture("trafficLightEntityTex.png")
 
 {//then this is the constructor
     this->window = window;
@@ -166,22 +169,33 @@ void PlayingState::render() {
     }
 
     for (WorldEntity* entity : gameState.worldEntities) {
+        if (entity->getType() == EntityType::TrafficLight) {
+            TrafficLightEntity* tl = static_cast<TrafficLightEntity*>(entity);
 
-        glm::mat4 model = glm::mat4(1.0f); //identity
-        model = glm::translate(model, entity->position); //move it to the entities pos
+            glm::mat4 model = glm::mat4(1.0f); //identity
+            model = glm::translate(model, entity->position); //move it to the entities pos
 
-        int modelLoc = glGetUniformLocation(shader.ID, "model"); //get the modelLoc var in the shader
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model)); //tell the shader its pos (model)
+            int modelLoc = glGetUniformLocation(shader.ID, "model"); //get the modelLoc var in the shader
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model)); //tell the shader its pos (model)
 
-        Material& m = entity->material;
-        if (m.texture) m.texture->bind(); //if we have a texture, bind it
-        else texture.bind(); //just 'texture' is our checkerboard texture
+            glm::vec3 emissiveColor;
+            if (tl->getIsRed()) {
+                emissiveColor = glm::vec3(1.0f, 0.0f, 0.0f);
+            }
+            else {
+                emissiveColor = glm::vec3(0.0f, 1.0f, 0.0f);
+            }
 
-        glUniform3f(glGetUniformLocation(shader.ID, "tint"), m.tint.r, m.tint.g, m.tint.b);
-        glUniform3f(glGetUniformLocation(shader.ID, "emissive"), m.emissive.r, m.emissive.g, m.emissive.b);
-        glUniform2f(glGetUniformLocation(shader.ID, "textureScale"), m.textureScale.x, m.textureScale.y);
 
-        cubeMesh.draw(); //draw the cube
+            trafficLightTexture.bind();
+
+            glUniform3f(glGetUniformLocation(shader.ID, "tint"), 1.0f, 1.0f, 1.0f);
+            glUniform3f(glGetUniformLocation(shader.ID, "emissive"), emissiveColor.r, emissiveColor.g, emissiveColor.b);
+            glUniform2f(glGetUniformLocation(shader.ID, "textureScale"), 1.0f, 1.0f);
+
+            trafficLightMesh.draw(); //draw the mesh
+        }
+
     }
 }
 

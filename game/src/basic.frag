@@ -20,7 +20,7 @@ void main() {
     //sample the base color (without lighting)
     vec4 texSample = texture(ourTexture, TexCoord * textureScale); //maps ourTexture to the UV coords from TexCoord and scales the UVs
     vec3 objectColor = texSample.rgb; //actual visuals are only in the rgb channels, not alpha
-    float mask = texSample.a; //emissive mask is defined by the alpha layer
+    float mask = 1.0 - texSample.a; //emissive mask is defined by the alpha layer
     
     //now diffuse lighting
     vec3 norm = normalize(Normal);

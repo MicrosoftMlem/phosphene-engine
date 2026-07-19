@@ -7,6 +7,7 @@ public:
     void update(GameState& state, float deltaTime) override;
     bool isExpired() const override;
     virtual EntityType getType() const override;
+    bool getIsRed() const { return isRed; }
     
 private:
     float timer = 0.0f;

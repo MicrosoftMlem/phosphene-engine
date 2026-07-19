@@ -1,6 +1,5 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "Material.h"
 
 struct GameState; //forward declare
 
@@ -17,5 +16,4 @@ public:
 
     glm::vec3 position;
     int ownerIndex = -1;
-    Material material;
 };

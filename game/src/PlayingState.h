@@ -30,6 +30,9 @@ private:
 
     Mesh testMesh;
     
+    Mesh trafficLightMesh;
+    Texture trafficLightTexture;
+    
     Level level;
 
     bool primaryWasDown = false; //for edge detecting mouse click

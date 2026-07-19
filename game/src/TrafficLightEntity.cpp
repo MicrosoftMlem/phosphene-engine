@@ -36,12 +36,6 @@ void TrafficLightEntity::update(GameState& state, float deltaTime) {
         }
     }
 
-    if (isRed) {
-        material.emissive = glm::vec3(0.7f, 0.0f, 0.0f); //red glow
-    }
-    else {
-        material.emissive = glm::vec3(0.0f, 0.7f, 0.0f);
-    }
 }
 
 bool TrafficLightEntity::isExpired() const {
