@@ -15,6 +15,7 @@
 #include "OBJLoader.h"
 #include "Material.h"
 #include "TrafficLightEntity.h"
+#include "Bot.h"
 
 
 PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member initialisation list. it specifies HOW to construct members before the constructor is run
@@ -24,22 +25,17 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
       activeCamera(glm::vec3(0.0f, 0.0f, 3.0f)),
       testMesh(loadOBJ("sphere.obj")),
       trafficLightMesh(loadOBJ("trafficLightEntity.obj")),
-      trafficLightTexture("trafficLightEntityTex.png")
+      trafficLightTexture("trafficLightEntityTex.png"),
+      playerTexture("enemy_player_checker.png")
 
 {//then this is the constructor
     this->window = window;
     glfwSetWindowUserPointer(window, &activeCamera);
 
+
     level = loadLevel("test1v1level.level.json", &cubeMesh, &texture);
-    //add test mesh: //now its a cube for seeing hitbox
 
-    Material mat;
-    mat.texture = &texture;
-    mat.textureScale = glm::vec2(1.0f);
-    mat.emissive = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    level.objects.push_back(GameObject(&cubeMesh, mat, level.spawns[1], glm::vec3(0.6f, 1.8f, 0.6f)));
-    level.objects.back().collidable = false; //.back() is the last entry added
 
     if (!level.lights.empty()) {
         worldLightPos = level.lights[0]; //set the light pos to the first light in the level
@@ -72,6 +68,9 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
 
 
 void PlayingState::update(float deltaTime) {
+    uiTime += deltaTime;
+
+
         //first update game logic:
     gameState.colliders.clear();
     for (GameObject& obj : level.objects) {
@@ -126,6 +125,9 @@ void PlayingState::update(float deltaTime) {
 
     //per player input/movement
     processPlayerInput(gameState, 0, command, deltaTime);
+
+    InputCommand botCommand = computeBotCommand(gameState, 1);
+    processPlayerInput(gameState, 1, botCommand, deltaTime);
 
     activeCamera.position = gameState.players[0].position + glm::vec3(0.0f, 1.7f, 0.0f);
 
@@ -199,14 +201,81 @@ void PlayingState::render() {
 
     }
 
+
+    //draw players:
+    for (int i = 0; i < gameState.players.size(); i++) {
+        if (i == 0) continue; //dont draw ourself
+
+        PlayerState& p = gameState.players[i];
+
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), p.position); //make an identity and move it to the players position
+
+        model = glm::translate(model, glm::vec3(0.0f, 0.9f, 0.0f)); //cube is centred so move it halfway up player
+        model = glm::scale(model, glm::vec3(0.6f, 1.8f, 0.6f)); //scale the cube to the players size
+
+        glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+        playerTexture.bind();
+        glUniform3f(glGetUniformLocation(shader.ID, "tint"), 1.0f, 1.0f, 1.0f);
+        glUniform3f(glGetUniformLocation(shader.ID, "emissive"), 0.0f, 0.0f, 0.0f);
+        glUniform2f(glGetUniformLocation(shader.ID, "textureScale"), 0.1f, 0.1f);
+
+        cubeMesh.draw();
+    }
+
+
+    //                   UI PASS:
     //ui pass which is ontop so disable depth test
     glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND); //make it so it can do alpha
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //tell gpu how to use alpha
 
     //w and h are already defined earlier in the func so we reuse them:
     glfwGetFramebufferSize(window, &w, &h);
-    uiRenderer.drawRect(50.0f, 50.0f, 200.0f, 30.0f, glm::vec4(1.0f, 0.0f, 0.0f, 0.9f), w, h);
+
+    // temporary crosshair:
+    uiRenderer.drawRect(w / 2 - 1, h / 2 - 4, 2.0f, 8.0f, glm::vec4(1.0f, 1.0f, 1.0f, 0.4f), w, h); // crosshair y
+    uiRenderer.drawRect(w / 2 - 4, h / 2 - 1, 8.0f, 2.0f, glm::vec4(1.0f, 1.0f, 1.0f, 0.4f), w, h); // crosshair x
+    //    end of temporary crosshair
+
+    // temporary healthBar:
+    PlayerState& me = gameState.players[0];
+    float healthFraction = me.health / 120.0f; //120 is max health
+    if (healthFraction < 0.0f) healthFraction = 0.0f; //clamp to 0
+
+    float barX = 40.0f;
+    float barY = h - 60.0f;
+    float barWidth = 300.0f;
+    float barHeight = 30.0f;
+
+    //background:
+    uiRenderer.drawRect(barX, barY, barWidth, barHeight, glm::vec4(0.1f, 0.1f, 0.1f, 0.6f), w, h);
+
+    //forground
+    uiRenderer.drawRect(barX, barY, barWidth * healthFraction, barHeight, glm::vec4(1.0f, 0.2f, 0.2f, 0.8f), w, h);
+    //      end of temporary healthbar
+
+
+    // score pips
+    float pipSize = 28.0f;
+    float pipGap = 6.0f;
+    float pipStartX = 40.0f;
+
+    // player 0 on top row
+    for (int i = 0; i < gameState.roundWins[0]; i++) {
+        float px = pipStartX + i * (pipSize + pipGap);
+        uiRenderer.drawFireRect(px, 30.0f, pipSize, pipSize, uiTime, 0.08f, w, h);
+    }
+
+    //player 1 on row below
+    for (int i = 0; i < gameState.roundWins[1]; i++) {
+        float px = pipStartX + i * (pipSize + pipGap);
+        uiRenderer.drawRect(px, 30.0f + pipSize + pipGap, pipSize, pipSize, glm::vec4(1.0f, 0.4f, 0.2f, 0.7f), w, h);
+    }
+    //    end of temporary score pips
 
     glEnable(GL_DEPTH_TEST); //re-enable it for the next frames 3d
+    glDisable(GL_BLEND); //disable alpha for now bc idk how it will intefere with 3d
 }
 
 
@@ -216,5 +285,5 @@ void giveRoundItems(PlayerState& player) {
 
     player.weapon = new Pistol();
     player.ability = new TrafficLight();
-    player.equipped = EquipSlot::Weapon;
+    player.equipped = EquipSlot::Ability;
 }

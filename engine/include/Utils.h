@@ -1,5 +1,7 @@
 #pragma once
 
+//probably move to AABB.h idk
+
 inline bool hasLineOfSight(const glm::vec3& from, const glm::vec3& to, const std::vector<AABB>& colliders) {
     glm::vec3 delta = to - from; //the vector pointing from 'from' to 'to'
     float distance = glm::length(delta); // its length

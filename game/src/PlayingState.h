@@ -27,6 +27,7 @@ private:
     glm::vec3 worldLightPos;
     Shader shader;
     Texture texture;
+    Texture playerTexture;
     Mesh cubeMesh;
 
     Mesh testMesh;
@@ -42,6 +43,8 @@ private:
     bool secondaryWasDown = false;
 
     RoundPhase previousPhase = RoundPhase::Active;
+
+    float uiTime = 0.0f;
 };
 
 void giveRoundItems(PlayerState& player);
