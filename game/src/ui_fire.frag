@@ -5,47 +5,79 @@ out vec4 FragColor;
 in vec2 TexCoord; //0-1 inside the ui quad
 
 uniform float time;
-uniform float pixelSize; //bigger = bigger pixels
+uniform float amount; //intensity
+uniform float id; //random seed
 
-float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); //simple hash-based noise generator 
-}
+uniform vec3 color1; //main color
+uniform vec3 color2; //hot color
 
-float noise(vec2 p) { //generate some noise
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    f = f * f * (3.0 - 2.0 * f); //smooth-step interpolation
-    float a = hash(i);
-    float b = hash(i + vec2(1.0, 0.0));
-    float c = hash(i + vec2(0.0, 1.0));
-    float d = hash(i + vec2(1.0, 1.0));
-    return (mix(mix(a, b, f.x), mix(c, d, f.x), f.y));
-}
+const float PIXEL_SIZE_FAC = 60.0f;
 
-//hue (1-0) to rgb for the rainbow effect
-vec3 hue2rgb(float h) {
-    vec3 k = vec3(1.0, 2.0/3.0, 1.0/3.0);
-    vec3 p = abs(fract(vec3(h) + k) * 6.0 - 3.0);
-    return clamp(p - 1.0, 0.0, 1.0);
-}
 
 void main() {
-    //pixelate it first
-    vec2 uv = floor(TexCoord / pixelSize) * pixelSize;
+    float intensity = min(10.0, amount);
+    if (intensity < 0.1) {
+        FragColor = vec4(0.0); //clamp it
+        return;
+    }
 
-    //then fire noise scrolling upward-left over time
-    float n = noise(uv * 8.0 + vec2(-time * 1.4, -time * 2.0));
+    vec2 uv = TexCoord - 0.5; //local uv, centred
 
-    //vertical gradient
-    float gradient = TexCoord.y;
-    float intensity = n * gradient;
+    //pixelate
+    vec2 floored_uv = floor(uv * PIXEL_SIZE_FAC) / PIXEL_SIZE_FAC;
+    vec2 uv_scaled_centred = floored_uv;
 
-    //rainbow hue cycling with time and pos
-    float hue = fract(time * 0.1 + TexCoord.y * 0.5);
-    vec3 fireColor = hue2rgb(hue) * intensity * 2.0;
+    //base distortion
+    uv_scaled_centred += uv_scaled_centred * 0.01 * (
+        sin(-1.123 * floored_uv.x + 0.2 * time) *
+        cos(5.3332 * floored_uv.y + time * 0.931)
+    );
 
-    //then fade out the alpha when intensity is low:
-    float alpha = smoothstep(0.1, 0.4, intensity);
 
-    FragColor = vec4(fireColor, alpha);
+    vec2 flame_up_vec = vec2(0.0, mod(4.0 * time, 10000.0) - 5000.0 + mod(1.781 * id, 1000.0));
+    float scale_fac = (7.5 + 3.0 / (2.0 + 2.0 * intensity));
+    vec2 sv = uv_scaled_centred * scale_fac + flame_up_vec;
+    float speed = mod(20.781 * id, 100.0) + 1.0 * sin(time + id) * cos(time * 0.151 + id);
+    vec2 sv2 = vec2(0.0);
+
+
+
+    //fractal distortion loop
+    for (int i = 0; i < 5; i++) {
+        float iteration_mod = (mod(float(i), 2.0) > 1.0 ? -1.0 : 1.0);
+        sv2 += sv + 0.05 * sv2.yx * iteration_mod + 0.3 * (
+            cos(length(sv) * 0.411) + 0.3344 * sin(length(sv)) - 0.23 * cos(length(sv))
+        );
+        sv += 0.5 * vec2(
+            cos(cos(sv2.y) + speed * 0.0812) * sin(3.22 + sv2.x - speed * 0.1531),
+            sin(-sv2.x * 1.21222 + 0.113785 * speed) * cos(sv2.y * 0.91213 - 0.13582 * speed)
+        );
+    }
+
+    //smoke/flame density
+    float smoke_res = max(0.0, (
+        (length((sv - flame_up_vec) / scale_fac * 5.0) + 0.1 * (length(uv_scaled_centred) - 0.5)) *
+        (2.0 / (2.0 + intensity * 0.2))
+    ));
+    smoke_res = smoke_res + max(0.0, 2.0 - 0.3 * intensity) * max(0.0, 2.0 * (uv_scaled_centred.y - 0.5) * (uv_scaled_centred.y - 0.5));
+    // if (abs(uv.x) > 0.4) {
+    //     smoke_res += 10.0 * (abs(uv.x) - 0.4);
+    // }
+
+
+
+    //coloring
+    vec3 ret_col = color1;
+
+    if (smoke_res > 1.0) {
+        FragColor = vec4(0.0);
+    }
+    else {
+        if (uv.y < 0.12) {
+            float y_factor = 0.12 - uv.y;
+            ret_col = ret_col * (1.0 - 0.5 * y_factor) + 2.5 * y_factor * color2;
+            ret_col += ret_col * (-2.0 + 0.5 * intensity * smoke_res) * y_factor;
+        }
+        FragColor = vec4(ret_col, 1.0);
+    }
 }

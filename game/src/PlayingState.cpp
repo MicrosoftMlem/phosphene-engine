@@ -1,6 +1,7 @@
 #include "glm/glm.hpp"
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include <cstdlib>
 #include "PlayingState.h"
 #include "Shader.h"
 #include "Texture.h"
@@ -260,19 +261,40 @@ void PlayingState::render() {
     float pipSize = 28.0f;
     float pipGap = 6.0f;
     float pipStartX = 40.0f;
+    float pipY = 30.0f;
 
-    // player 0 on top row
-    for (int i = 0; i < gameState.roundWins[0]; i++) {
-        float px = pipStartX + i * (pipSize + pipGap);
-        uiRenderer.drawFireRect(px, 30.0f, pipSize, pipSize, uiTime, 0.08f, w, h);
-    }
 
     //player 1 on row below
     for (int i = 0; i < gameState.roundWins[1]; i++) {
         float px = pipStartX + i * (pipSize + pipGap);
-        uiRenderer.drawRect(px, 30.0f + pipSize + pipGap, pipSize, pipSize, glm::vec4(1.0f, 0.4f, 0.2f, 0.7f), w, h);
+
+        float fireW = pipSize * 1.5f;
+        float fireH = pipSize * 3.0f;
+        float fireX = px - (fireW - pipSize) * 0.5f; //centre horizontally on the pip
+        float fireY = pipY - (fireH - pipSize); //extend upward
+        uiRenderer.drawFireRect(fireX, 30 + fireY, fireW, fireH, uiTime, i, glm::vec3(0.20000f, 0.01569f, 0.18824f), glm::vec3(0.11373f, 0.23922f, 0.02745f),  w, h);
+
+        uiRenderer.drawCircle(px - 3, 30.0 + pipSize + pipGap - 3, pipSize + 6, glm::vec4(0.20000f, 0.01569f, 0.18824f, 1.00000f), w, h); //draw pip border
+        uiRenderer.drawCircle(px, 30.0f + pipSize + pipGap, pipSize, glm::vec4(0.92941f, 0.14902f, 0.56471f, 1.00000f), w, h);
     }
-    //    end of temporary score pips
+
+
+    //draw player 0 after so its pips are ontop of the enemies
+        // player 0 on top row
+    for (int i = 0; i < gameState.roundWins[0]; i++) {
+        float px = pipStartX + i * (pipSize + pipGap);
+
+
+        float fireW = pipSize * 1.5f;
+        float fireH = pipSize * 3.0f;
+        float fireX = px - (fireW - pipSize) * 0.5f; //centre horizontally on the pip
+        float fireY = pipY - (fireH - pipSize); //extend upward
+        uiRenderer.drawFireRect(fireX, fireY, fireW, fireH, uiTime, i, glm::vec3(0.11373f, 0.23922f, 0.02745f), glm::vec3(0.20000f, 0.01569f, 0.18824f), w, h);
+
+        uiRenderer.drawCircle(px - 3, pipY - 3, pipSize + 6, glm::vec4(0.11373f, 0.23922f, 0.02745f, 1.00000f), w, h); //draw pip border
+        uiRenderer.drawCircle(px, pipY, pipSize, glm::vec4(0.71765f, 0.92157f, 0.20392f, 1.00000f), w, h); //draw pip after (ontop)
+    }
+    //     end of temporary score pips
 
     glEnable(GL_DEPTH_TEST); //re-enable it for the next frames 3d
     glDisable(GL_BLEND); //disable alpha for now bc idk how it will intefere with 3d
@@ -285,5 +307,10 @@ void giveRoundItems(PlayerState& player) {
 
     player.weapon = new Pistol();
     player.ability = new TrafficLight();
-    player.equipped = EquipSlot::Ability;
+    if ((rand() % 2) == 1) {
+        player.equipped = EquipSlot::Weapon;
+    }
+    else {
+        player.equipped = EquipSlot::Ability;
+    }
 }

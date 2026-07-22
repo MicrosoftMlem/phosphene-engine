@@ -3,7 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-UIRenderer::UIRenderer() : shader("ui.vert", "ui.frag"), fireShader("ui.vert", "ui_fire.frag") { //stuff after colon is member initialiser list
+UIRenderer::UIRenderer() : shader("ui.vert", "ui.frag"), fireShader("ui.vert", "ui_fire.frag"), circleShader("ui.vert", "ui_circle.frag") { //stuff after colon is member initialiser list
     float vertices[] = { //a unit quad (2 triangles making a square)
         0.0f, 0.0f,
         1.0f, 0.0f,
@@ -44,7 +44,7 @@ void UIRenderer::drawRect(float x, float y, float width, float height, glm::vec4
     glBindVertexArray(0);
 }
 
-void UIRenderer::drawFireRect(float x, float y, float width, float height, float time, float pixelSize, int screenWidth, int screenHeight) {
+void UIRenderer::drawFireRect(float x, float y, float width, float height, float time, float id, glm::vec3 color1, glm::vec3 color2, int screenWidth, int screenHeight) {
     fireShader.use();
 
     //ortho: (0,0) top left, (screenWidth, ScrenHeight) bottom right
@@ -58,8 +58,30 @@ void UIRenderer::drawFireRect(float x, float y, float width, float height, float
     glUniformMatrix4fv(glGetUniformLocation(fireShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
     glUniformMatrix4fv(glGetUniformLocation(fireShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
     glUniform1f(glGetUniformLocation(fireShader.ID, "time"), time);
-    glUniform1f(glGetUniformLocation(fireShader.ID, "pixelSize"), pixelSize);
+    glUniform1f(glGetUniformLocation(fireShader.ID, "amount"), 5.0f); //intensity
+    glUniform1f(glGetUniformLocation(fireShader.ID, "id"), id);
+    glUniform3f(glGetUniformLocation(fireShader.ID, "color1"), color1.x, color1.y, color1.z);
+    glUniform3f(glGetUniformLocation(fireShader.ID, "color2"), color2.x, color2.y, color2.z);
+
     
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+
+void UIRenderer::drawCircle(float x, float y, float diameter, glm::vec4 color, int screenWidth, int screenHeight) {
+    circleShader.use();
+    
+    glm::mat4 projection = glm::ortho(0.0f, (float)screenWidth, (float)screenHeight, 0.0f, -1.0f, 1.0f);
+
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(x, y, 0.0f));
+    model = glm::scale(model, glm::vec3(diameter, diameter, 1.0f));
+
+    glUniformMatrix4fv(glGetUniformLocation(circleShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(circleShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    glUniform4f(glGetUniformLocation(circleShader.ID, "color"), color.r, color.g, color.b, color.a);
+
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
