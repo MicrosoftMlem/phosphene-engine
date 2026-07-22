@@ -16,4 +16,5 @@ struct InputCommand {
     bool primaryHeld = false; //if its held in general
     bool secondaryPressed = false;
     bool secondaryHeld = false;
+    bool dash = false; //edge triggered
 };

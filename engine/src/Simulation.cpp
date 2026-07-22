@@ -26,6 +26,20 @@ void processPlayerInput(GameState& state, int playerIndex, const InputCommand& c
     player.lookDirection = command.lookDirection;
 
 
+    const int maxDashCharges = 2;
+    const float dashRechargeTime = 1.5f;
+    const float dashDuration = 0.08f;
+    const float dashSpeed = 30.0f;
+
+    if (player.dashCharges < maxDashCharges) {
+        player.dashRechargeTimer += deltaTime;
+    }
+    if (player.dashRechargeTimer >= dashRechargeTime) {
+        player.dashCharges += 1;
+        player.dashRechargeTimer = 0.0f;
+    }
+
+
     if (command.equipWeapon) { //weapons first incase they modify movement (below)
         player.equipped = EquipSlot::Weapon;
     }
@@ -63,7 +77,51 @@ void processPlayerInput(GameState& state, int playerIndex, const InputCommand& c
     }
 
 
-    applyMovementInput(player, command, deltaTime); //then movement/collision after we do items (which may modify movement/collision)
+    if (command.dash && player.dashCharges > 0 && player.dashTimeLeft <= 0) { //<= 0 checks if we're already dashing
+        player.dashCharges -= 1;
+
+        glm::vec3 flatFront = command.lookDirection; //flatfront is forward dir WITHOUT up/down tilt
+        flatFront.y = 0.0f; //remove like up/down tilt
+        flatFront = glm::normalize(flatFront);
+        glm::vec3 flatRight = glm::normalize(glm::cross(flatFront, glm::vec3(0, 1, 0))); //get flatRight from cross product
+
+        glm::vec3 moveDir = glm::vec3(0.0f); //a vector of our movement input (will be normalized)
+
+        if (command.moveForward) {
+            moveDir += flatFront;
+        }
+        if (command.moveBack) {
+            moveDir -= flatFront;
+        }
+        if (command.moveLeft) {
+            moveDir -= flatRight;
+        }
+        if (command.moveRight) {
+            moveDir += flatRight;
+        }
+
+        if (glm::length(moveDir) > 0.0f) { //if there is movement input
+            player.dashDirection = glm::normalize(moveDir);
+        }
+        else {
+            player.dashDirection = flatFront;
+        }
+
+        player.dashTimeLeft = dashDuration;
+    }
+
+    if (player.dashTimeLeft > 0.0f) {
+
+        player.velocity.x = player.dashDirection.x * dashSpeed;
+        player.velocity.z = player.dashDirection.z * dashSpeed;
+        player.dashTimeLeft -= deltaTime;
+
+    }
+    else { //dont do applyMovementInput if we're dashing
+        applyMovementInput(player, command, deltaTime); //then movement/collision after we do items (which may modify movement/collision)
+    }
+
+    
     player.velocity.y += player.gravity * deltaTime;
     resolvePlayerCollisions(player, state.colliders, deltaTime);
 

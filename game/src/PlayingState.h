@@ -41,6 +41,7 @@ private:
 
     bool primaryWasDown = false; //for edge detecting mouse click
     bool secondaryWasDown = false;
+    bool dashWasDown = false;
 
     RoundPhase previousPhase = RoundPhase::Active;
 

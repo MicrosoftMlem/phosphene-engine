@@ -88,6 +88,9 @@ void PlayingState::update(float deltaTime) {
     command.moveRight = (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS);
     command.jump = (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
     command.lookDirection = activeCamera.front; //so the simulate can process where to move etc
+    bool dashIsDown = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS);
+    command.dash = dashIsDown && !dashWasDown;
+    dashWasDown = dashIsDown;
 
 
     if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
