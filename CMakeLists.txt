@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(unofficial-enet CONFIG QUIET)
 
 
 #build glad as a small static library
@@ -28,9 +29,12 @@ target_link_libraries(engine PUBLIC glad) #engine needs glad
 #final step:
 
 # 'game' is an executable build from main.cpp
-add_executable(game game/src/main.cpp game/src/Pistol.cpp game/src/PlayingState.cpp game/src/ButterflyKnife.cpp game/src/TrafficLight.cpp game/src/TrafficLightEntity.cpp)
+add_executable(game game/src/main.cpp game/src/Pistol.cpp game/src/PlayingState.cpp game/src/ButterflyKnife.cpp 
+               game/src/TrafficLight.cpp game/src/TrafficLightEntity.cpp game/src/Server.cpp game/src/NetworkClient.cpp
+               game/src/RoundItems.cpp)
 # connect the game to everything it needs
-target_link_libraries(game PRIVATE engine glfw OpenGL::GL glm::glm) #the game needs: glad (GL loader), Open::GL (the actual GL lib),
+target_link_libraries(game PRIVATE engine glfw OpenGL::GL glm::glm enet) #the game needs: glad (GL loader), Open::GL (the actual GL lib),
                                                                         # glm::glm (math)
                                                                         # engine (for engine). engine includes glad so glad will be linked aswell
+                                                                        # enet for networking
                                                                         # private == the game uses these but doesn't 're-expose' them

@@ -12,16 +12,19 @@
 #include "GameObject.h"
 #include "Level.h"
 #include "UIRenderer.h"
+#include "NetworkClient.h"
 
 
 class PlayingState : public GameStateBase {
 public:
-    PlayingState(GLFWwindow* window); //constructor
+    PlayingState(GLFWwindow* window, NetworkClient& network); //constructor
     void update(float deltaTime) override;
     void render() override;
 
 private:
     GLFWwindow* window;
+    NetworkClient& network;
+
     GameState gameState;
     Camera activeCamera;
     glm::vec3 worldLightPos;
@@ -46,9 +49,6 @@ private:
     float cameraHeight = 1.7f;
     float currentFov = 70.0f;
 
-    RoundPhase previousPhase = RoundPhase::Active;
 
     float uiTime = 0.0f;
 };
-
-void giveRoundItems(PlayerState& player);

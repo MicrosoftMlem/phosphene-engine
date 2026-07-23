@@ -17,9 +17,11 @@
 #include "Material.h"
 #include "TrafficLightEntity.h"
 #include "Bot.h"
+#include "NetworkClient.h"
+#include "RoundItems.h"
 
 
-PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member initialisation list. it specifies HOW to construct members before the constructor is run
+PlayingState::PlayingState(GLFWwindow* window, NetworkClient& networkRef)  //this first part is the member initialisation list. it specifies HOW to construct members before the constructor is run
     : shader("basic.vert", "basic.frag"),
       texture("checker.png"),
       cubeMesh(computeNormals(Primitive::rawCubeVertices)),
@@ -27,11 +29,13 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
       testMesh(loadOBJ("sphere.obj")),
       trafficLightMesh(loadOBJ("trafficLightEntity.obj")),
       trafficLightTexture("trafficLightEntityTex.png"),
-      playerTexture("enemy_player_checker.png")
+      playerTexture("enemy_player_checker.png"),
+      network(networkRef)
 
 {//then this is the constructor
     this->window = window;
     glfwSetWindowUserPointer(window, &activeCamera);
+
 
 
     level = loadLevel("test1v1level.level.json", &cubeMesh, &texture);
@@ -62,9 +66,6 @@ PlayingState::PlayingState(GLFWwindow* window)  //this first part is the member 
     PlayerState player1;
     player1.position = level.spawns[1];
     gameState.players.push_back(player1);
-
-    giveRoundItems(gameState.players[0]);
-    giveRoundItems(gameState.players[1]);
 }
 
 
@@ -113,37 +114,39 @@ void PlayingState::update(float deltaTime) {
     primaryWasDown = primaryIsDown; //remember for next frame
     secondaryWasDown = secondaryIsDown;
 
-    //reset player stats
-    for (int i = 0; i < gameState.players.size(); i++) {
-        resetPlayerStats(gameState.players[i]);
+    network.sendCommand(command);
+    network.poll();
+
+    int myIndex = network.getPlayerIndex();
+    if (myIndex < 0) return; // not recieved welcome packet yet
+
+    if (network.hasSnapshot()) {
+        const Snapshot& snap = network.getSnapshot();
+        for (int i = 0; i < snap.playerCount && i < (int)gameState.players.size(); i++) {
+            gameState.players[i].position = snap.players[i].position;
+            gameState.players[i].health = snap.players[i].health;
+            gameState.players[i].sliding = snap.players[i].sliding;
+            gameState.players[i].dashTimeLeft = snap.players[i].dashTimeLeft;
+        }
+        gameState.roundWins[0] = snap.roundWins[0];
+        gameState.roundWins[1] = snap.roundWins[1];
     }
 
-    //world update
-    updateWorld(gameState, level.spawns, deltaTime);
 
-    //we do this after updateWorld incase updateWorld changes phase
-    if (previousPhase == RoundPhase::RoundOver && gameState.phase == RoundPhase::Active) {
-        giveRoundItems(gameState.players[0]);
-        giveRoundItems(gameState.players[1]);
-    }
-    previousPhase = gameState.phase;
 
-    //per player input/movement
-    processPlayerInput(gameState, 0, command, deltaTime);
-
-    InputCommand botCommand = computeBotCommand(gameState, 1);
-    processPlayerInput(gameState, 1, botCommand, deltaTime);
-
-    float targetHeight = gameState.players[0].sliding ? 0.8f : 1.7f;
+    float targetHeight = gameState.players[myIndex].sliding ? 0.8f : 1.7f;
     cameraHeight = glm::mix(cameraHeight, targetHeight, 12.0f * deltaTime);
-    activeCamera.position = gameState.players[0].position + glm::vec3(0.0f, cameraHeight, 0.0f);
+    activeCamera.position = gameState.players[myIndex].position + glm::vec3(0.0f, cameraHeight, 0.0f);
 
-    float targetFov = (gameState.players[0].sliding || (gameState.players[0].dashTimeLeft > 0.0f)) ? 85.0f : 70.0f;
+    float targetFov = (gameState.players[myIndex].sliding || (gameState.players[myIndex].dashTimeLeft > 0.0f)) ? 85.0f : 70.0f;
     currentFov = glm::mix(currentFov, targetFov, 8.0f * deltaTime);
 
 }
 
 void PlayingState::render() {
+    int myIndex = network.getPlayerIndex();
+    if (myIndex < 0) return;
+
     //then render:
 
     shader.use();
@@ -214,7 +217,7 @@ void PlayingState::render() {
 
     //draw players:
     for (int i = 0; i < gameState.players.size(); i++) {
-        if (i == 0) continue; //dont draw ourself
+        if (i == myIndex) continue; //dont draw ourself
 
         PlayerState& p = gameState.players[i];
 
@@ -249,7 +252,7 @@ void PlayingState::render() {
     //    end of temporary crosshair
 
     // temporary healthBar:
-    PlayerState& me = gameState.players[0];
+    PlayerState& me = gameState.players[myIndex];
     float healthFraction = me.health / 120.0f; //120 is max health
     if (healthFraction < 0.0f) healthFraction = 0.0f; //clamp to 0
 
@@ -272,9 +275,10 @@ void PlayingState::render() {
     float pipStartX = 40.0f;
     float pipY = 30.0f;
 
+    int otherIndex = (myIndex == 0) ? 1 : 0;
 
     //player 1 on row below
-    for (int i = 0; i < gameState.roundWins[1]; i++) {
+    for (int i = 0; i < gameState.roundWins[otherIndex]; i++) {
         float px = pipStartX + i * (pipSize + pipGap);
 
         float fireW = pipSize * 1.5f;
@@ -290,7 +294,7 @@ void PlayingState::render() {
 
     //draw player 0 after so its pips are ontop of the enemies
         // player 0 on top row
-    for (int i = 0; i < gameState.roundWins[0]; i++) {
+    for (int i = 0; i < gameState.roundWins[myIndex]; i++) {
         float px = pipStartX + 12 + i * (pipSize + pipGap);
 
 
@@ -309,17 +313,3 @@ void PlayingState::render() {
     glDisable(GL_BLEND); //disable alpha for now bc idk how it will intefere with 3d
 }
 
-
-void giveRoundItems(PlayerState& player) {
-    delete player.weapon;
-    delete player.ability;
-
-    player.weapon = new Pistol();
-    player.ability = new TrafficLight();
-    if ((rand() % 2) == 1) {
-        player.equipped = EquipSlot::Weapon;
-    }
-    else {
-        player.equipped = EquipSlot::Ability;
-    }
-}

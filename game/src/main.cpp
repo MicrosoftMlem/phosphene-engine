@@ -5,6 +5,7 @@
 #include <glm/gtc/type_ptr.hpp> // a bridge to give glms matrix to OpenGL
 #include <iostream>
 #include <vector>
+#include <enet/enet.h>
 //#include "Shader.h"
 //#include "Texture.h"
 //#include "Camera.h"
@@ -19,6 +20,8 @@
 #include "PlayingState.h"
 #include "GameStateBase.h"
 #include "OBJLoader.h"
+#include "Server.h"
+#include "NetworkClient.h"
 
 /*
 when we are telling the gpu to do stuff we have 2 things:
@@ -67,7 +70,26 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
 
 
-int main() {
+int main(int argc, char** argv) {
+    bool isServer = (argc > 1 && std::string(argv[1]) == "--server");
+
+    if (enet_initialize() != 0) { std::cout << "ENet init failed\n"; return 1; }
+
+    if (isServer) {
+        runServer();
+        enet_deinitialize();
+        return 0; //so we stop here and dont run all the rendering stuff bc server doesnt need that
+    }
+
+
+    NetworkClient network;
+    if (!network.connectToServer("127.0.0.1", 7777)) {
+        std::cout << "Could not connect, exiting\n";
+        return 1;
+    }
+
+
+
     glfwInit(); //starts the library
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -98,10 +120,8 @@ int main() {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //hides cursor and locks it so it wont come out window when doing camera moving w/ mouse
 
 
-    GameStateBase* currentState = new PlayingState(window); //so to change states we just change this
+    GameStateBase* currentState = new PlayingState(window, network); //so to change states we just change this
 
-
-    loadOBJ("cube.obj"); //load a test cube
 
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = (float)glfwGetTime(); //seconds since start
