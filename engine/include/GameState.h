@@ -37,6 +37,8 @@ struct PlayerState {
     float dashTimeLeft = 0.0f; //how long the current dash/burst lasts
     glm::vec3 dashDirection = glm::vec3(0.0f);
 
+    bool sliding = false;
+
     Item* weapon = nullptr;
     Item* ability = nullptr;
     EquipSlot equipped = EquipSlot::Weapon;

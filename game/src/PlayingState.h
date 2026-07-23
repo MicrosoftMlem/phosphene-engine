@@ -43,6 +43,9 @@ private:
     bool secondaryWasDown = false;
     bool dashWasDown = false;
 
+    float cameraHeight = 1.7f;
+    float currentFov = 70.0f;
+
     RoundPhase previousPhase = RoundPhase::Active;
 
     float uiTime = 0.0f;

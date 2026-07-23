@@ -17,4 +17,5 @@ struct InputCommand {
     bool secondaryPressed = false;
     bool secondaryHeld = false;
     bool dash = false; //edge triggered
+    bool crouch = false;
 };

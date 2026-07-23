@@ -16,6 +16,7 @@ static void applyMovementInput(PlayerState& player, const InputCommand& command,
 static void resolvePlayerCollisions(PlayerState& player, const std::vector<AABB>& colliders, float deltaTime);
 static void updateRound(GameState& state, const std::vector<glm::vec3>& spawns, float deltaTime);
 static void resetRound(GameState& state, const std::vector<glm::vec3> spawns);
+static glm::vec3 computeFlatMoveDirection(const InputCommand& command);
 
 
 void processPlayerInput(GameState& state, int playerIndex, const InputCommand& command, float deltaTime) {
@@ -25,12 +26,29 @@ void processPlayerInput(GameState& state, int playerIndex, const InputCommand& c
 
     player.lookDirection = command.lookDirection;
 
+    const float slideMinSpeed = 3.0f;
+    const float slideEntryBoost = 3.0f;
+    const float slideFriction = 0.995f; //per tick decay
+    const float slideSteer = 3.0f;
 
     const int maxDashCharges = 2;
     const float dashRechargeTime = 1.5f;
     const float dashDuration = 0.08f;
     const float dashSpeed = 30.0f;
 
+    //slide enter/exit
+    float horizontalSpeed = glm::length(glm::vec3(player.velocity.x, 0.0, player.velocity.z));
+    if (!player.sliding && command.crouch && player.grounded && horizontalSpeed > slideMinSpeed) {
+        player.sliding = true;
+        player.velocity.x *= slideEntryBoost;
+        player.velocity.z *= slideEntryBoost;
+    }
+    else if (player.sliding && (!command.crouch || horizontalSpeed < slideMinSpeed)) {
+        player.sliding = false;
+    }
+
+
+    //dash charges
     if (player.dashCharges < maxDashCharges) {
         player.dashRechargeTimer += deltaTime;
     }
@@ -39,7 +57,7 @@ void processPlayerInput(GameState& state, int playerIndex, const InputCommand& c
         player.dashRechargeTimer = 0.0f;
     }
 
-
+    //equipping
     if (command.equipWeapon) { //weapons first incase they modify movement (below)
         player.equipped = EquipSlot::Weapon;
     }
@@ -48,14 +66,14 @@ void processPlayerInput(GameState& state, int playerIndex, const InputCommand& c
     }
 
     Item* held = (player.equipped == EquipSlot::Weapon) ? player.weapon : player.ability;
-
+    //item ticking
     if (player.weapon) {
         player.weapon->tickInternal(deltaTime);
     }
     if (player.ability) {
         player.ability->tickInternal(deltaTime);
     }
-
+    //item passive update
     if (player.weapon && (player.weapon == held || player.weapon->isAlwaysActive())) {
         //if we have a weapon, AND we are either holding it or it always ticks, tick it
         player.weapon->passiveUpdate(state, playerIndex, deltaTime);
@@ -66,6 +84,7 @@ void processPlayerInput(GameState& state, int playerIndex, const InputCommand& c
         player.ability->passiveUpdate(state, playerIndex, deltaTime);
     }
 
+    //item using
     if (held) {
         
         if (command.primaryPressed) { //currently hardcoded that left click is semi auto 
@@ -76,14 +95,12 @@ void processPlayerInput(GameState& state, int playerIndex, const InputCommand& c
         }
     }
 
-
+    //dash
     if (command.dash && player.dashCharges > 0 && player.dashTimeLeft <= 0) { //<= 0 checks if we're already dashing
         player.dashCharges -= 1;
 
-        glm::vec3 flatFront = command.lookDirection; //flatfront is forward dir WITHOUT up/down tilt
-        flatFront.y = 0.0f; //remove like up/down tilt
-        flatFront = glm::normalize(flatFront);
-        glm::vec3 flatRight = glm::normalize(glm::cross(flatFront, glm::vec3(0, 1, 0))); //get flatRight from cross product
+        glm::vec3 flatFront = computeFlatMoveDirection(command);
+        glm::vec3 flatRight = glm::normalize(glm::cross(flatFront, glm::vec3(0, 1, 0)));
 
         glm::vec3 moveDir = glm::vec3(0.0f); //a vector of our movement input (will be normalized)
 
@@ -115,6 +132,42 @@ void processPlayerInput(GameState& state, int playerIndex, const InputCommand& c
         player.velocity.x = player.dashDirection.x * dashSpeed;
         player.velocity.z = player.dashDirection.z * dashSpeed;
         player.dashTimeLeft -= deltaTime;
+
+    }
+    else if (player.sliding) {
+        player.velocity.x *= slideFriction;
+        player.velocity.z *= slideFriction;
+
+        glm::vec3 flatFront = computeFlatMoveDirection(command);
+        glm::vec3 flatRight = glm::normalize(glm::cross(flatFront, glm::vec3(0, 1, 0))); //get flatRight from cross product
+
+        glm::vec3 moveDir = glm::vec3(0.0f); //a vector of our movement input (will be normalized)
+
+        if (command.moveForward) {
+            moveDir += flatFront;
+        }
+        if (command.moveBack) {
+            moveDir -= flatFront;
+        }
+        if (command.moveLeft) {
+            moveDir -= flatRight;
+        }
+        if (command.moveRight) {
+            moveDir += flatRight;
+        }
+
+        if (glm::length(moveDir) > 0.0f) { //if there is movement input
+            moveDir = glm::normalize(moveDir);
+        }
+
+        player.velocity.x += moveDir.x * slideSteer * deltaTime;
+        player.velocity.z += moveDir.z * slideSteer * deltaTime;
+
+
+        if (command.jump && player.grounded) {
+            player.velocity.y = player.jumpStrength + glm::length(glm::vec3(player.velocity.x, 0.0f, player.velocity.z)) / 3;
+            player.sliding = false;
+        }
 
     }
     else { //dont do applyMovementInput if we're dashing
@@ -378,3 +431,10 @@ static void updateRound(GameState& state, const std::vector<glm::vec3>& spawns, 
     }
 }
 
+static glm::vec3 computeFlatMoveDirection(const InputCommand& command) {
+    glm::vec3 flatFront = command.lookDirection; //flatfront is forward dir WITHOUT up/down tilt
+    flatFront.y = 0.0f; //remove like up/down tilt
+    flatFront = glm::normalize(flatFront);
+
+    return flatFront;
+}

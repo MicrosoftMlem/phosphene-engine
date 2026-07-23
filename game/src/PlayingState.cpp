@@ -91,6 +91,7 @@ void PlayingState::update(float deltaTime) {
     bool dashIsDown = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS);
     command.dash = dashIsDown && !dashWasDown;
     dashWasDown = dashIsDown;
+    command.crouch = (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS);
 
 
     if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
@@ -133,7 +134,12 @@ void PlayingState::update(float deltaTime) {
     InputCommand botCommand = computeBotCommand(gameState, 1);
     processPlayerInput(gameState, 1, botCommand, deltaTime);
 
-    activeCamera.position = gameState.players[0].position + glm::vec3(0.0f, 1.7f, 0.0f);
+    float targetHeight = gameState.players[0].sliding ? 0.8f : 1.7f;
+    cameraHeight = glm::mix(cameraHeight, targetHeight, 12.0f * deltaTime);
+    activeCamera.position = gameState.players[0].position + glm::vec3(0.0f, cameraHeight, 0.0f);
+
+    float targetFov = (gameState.players[0].sliding || (gameState.players[0].dashTimeLeft > 0.0f)) ? 85.0f : 70.0f;
+    currentFov = glm::mix(currentFov, targetFov, 8.0f * deltaTime);
 
 }
 
@@ -154,7 +160,7 @@ void PlayingState::render() {
 
     glm::mat4 view = activeCamera.getViewMatrix(); //make the camera be at right pos and look in right dir
     glm::mat4 projection; //identity
-    projection = glm::perspective(glm::radians(70.0f), aspect, 0.1f, 100.0f); //fov = 45, aspect ratio = 800/600, near clip plane = 0.1f (close than this isnt drawn),
+    projection = glm::perspective(glm::radians(currentFov), aspect, 0.1f, 100.0f); //fov = 45, aspect ratio = 800/600, near clip plane = 0.1f (close than this isnt drawn),
                                                                                         // far clip plane 100.0f (further than this isnt drawn)
     int viewLoc = glGetUniformLocation(shader.ID, "view");
     int projLoc = glGetUniformLocation(shader.ID, "projection");
@@ -262,7 +268,7 @@ void PlayingState::render() {
 
     // score pips
     float pipSize = 28.0f;
-    float pipGap = 6.0f;
+    float pipGap = 8.0f;
     float pipStartX = 40.0f;
     float pipY = 30.0f;
 
@@ -285,7 +291,7 @@ void PlayingState::render() {
     //draw player 0 after so its pips are ontop of the enemies
         // player 0 on top row
     for (int i = 0; i < gameState.roundWins[0]; i++) {
-        float px = pipStartX + i * (pipSize + pipGap);
+        float px = pipStartX + 12 + i * (pipSize + pipGap);
 
 
         float fireW = pipSize * 1.5f;
