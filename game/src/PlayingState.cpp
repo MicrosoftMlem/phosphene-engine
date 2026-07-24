@@ -72,54 +72,12 @@ PlayingState::PlayingState(GLFWwindow* window, NetworkClient& networkRef)  //thi
 void PlayingState::update(float deltaTime) {
     uiTime += deltaTime;
 
-
-        //first update game logic:
-    gameState.colliders.clear();
-    for (GameObject& obj : level.objects) {
-        if (obj.collidable) {
-            gameState.colliders.push_back(obj.getAABB());
-        }
-    }
-
-    InputCommand command;
-    
-    command.moveForward = (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS);
-    command.moveBack = (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS);
-    command.moveLeft = (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS);
-    command.moveRight = (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS);
-    command.jump = (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
-    command.lookDirection = activeCamera.front; //so the simulate can process where to move etc
-    bool dashIsDown = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS);
-    command.dash = dashIsDown && !dashWasDown;
-    dashWasDown = dashIsDown;
-    command.crouch = (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS);
-
-
-    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
-        command.equipWeapon = true;
-    }
-    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
-        command.equipAbility = true;
-    }
-    
-    bool primaryIsDown = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS); //if left mouse pressed, its true. else is false
-    bool secondaryIsDown = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
-
-    command.primaryHeld = primaryIsDown;
-    command.primaryPressed = primaryIsDown && !primaryWasDown; //is down and wasnt last frame
-
-    command.secondaryHeld = secondaryIsDown;
-    command.secondaryPressed = secondaryIsDown && !secondaryWasDown; //is down and wasnt down last frame
-
-    primaryWasDown = primaryIsDown; //remember for next frame
-    secondaryWasDown = secondaryIsDown;
-
-    network.sendCommand(command);
     network.poll();
 
     int myIndex = network.getPlayerIndex();
-    if (myIndex < 0) return; // not recieved welcome packet yet
+    if (myIndex < 0 || myIndex >= (int)gameState.players.size()) return; // not recieved welcome packet yet. should never be >= players.size() (out of range)
 
+    //apply snapshot
     if (network.hasSnapshot()) {
         const Snapshot& snap = network.getSnapshot();
         for (int i = 0; i < snap.playerCount && i < (int)gameState.players.size(); i++) {
@@ -131,6 +89,56 @@ void PlayingState::update(float deltaTime) {
         gameState.roundWins[0] = snap.roundWins[0];
         gameState.roundWins[1] = snap.roundWins[1];
     }
+
+
+    //fixed timestep
+    tickAccumulator += deltaTime;
+    while (tickAccumulator >= TICK_RATE) {
+        tickAccumulator -= TICK_RATE;
+
+        gameState.colliders.clear();
+        for (GameObject& obj : level.objects) {
+            if (obj.collidable) {
+                gameState.colliders.push_back(obj.getAABB());
+            }
+        }
+
+        InputCommand command;
+        
+        command.moveForward = (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS);
+        command.moveBack = (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS);
+        command.moveLeft = (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS);
+        command.moveRight = (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS);
+        command.jump = (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
+        command.lookDirection = activeCamera.front; //so the simulate can process where to move etc
+        bool dashIsDown = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS);
+        command.dash = dashIsDown && !dashWasDown;
+        dashWasDown = dashIsDown;
+        command.crouch = (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS);
+
+
+        if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+            command.equipWeapon = true;
+        }
+        if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+            command.equipAbility = true;
+        }
+        
+        bool primaryIsDown = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS); //if left mouse pressed, its true. else is false
+        bool secondaryIsDown = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
+
+        command.primaryHeld = primaryIsDown;
+        command.primaryPressed = primaryIsDown && !primaryWasDown; //is down and wasnt last frame
+
+        command.secondaryHeld = secondaryIsDown;
+        command.secondaryPressed = secondaryIsDown && !secondaryWasDown; //is down and wasnt down last frame
+
+        primaryWasDown = primaryIsDown; //remember for next frame
+        secondaryWasDown = secondaryIsDown;
+
+        network.sendCommand(command);
+    }
+
 
 
 

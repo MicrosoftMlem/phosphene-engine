@@ -161,6 +161,7 @@ void runServer() {
         snapshot.tick = tickCounter;
         snapshot.playerCount = (int)gameState.players.size();
         for (int i = 0; i < snapshot.playerCount && i < 2; i++) {
+            snapshot.players[i].lastAppliedSequence = lastAppliedSequence[i]; //telling player that the below info is from this (N) snapshot
             snapshot.players[i].position = gameState.players[i].position;
             snapshot.players[i].lookDirection = gameState.players[i].lookDirection;
             snapshot.players[i].health = gameState.players[i].health;

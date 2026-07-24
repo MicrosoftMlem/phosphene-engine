@@ -2,6 +2,8 @@
 #include <glm/glm.hpp>
 
 struct PlayerSnapshot {
+    unsigned int lastAppliedSequence;
+
     glm::vec3 position;
     glm::vec3 lookDirection;
     float health;

@@ -51,4 +51,7 @@ private:
 
 
     float uiTime = 0.0f;
+
+    float tickAccumulator = 0.0f;
+    static constexpr float TICK_RATE = 1.0f / 60.0f;
 };
