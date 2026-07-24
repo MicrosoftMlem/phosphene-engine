@@ -54,4 +54,7 @@ private:
 
     float tickAccumulator = 0.0f;
     static constexpr float TICK_RATE = 1.0f / 60.0f;
+
+    static constexpr int COMMAND_HISTORY_SIZE = 64;
+    InputCommand commandHistory[COMMAND_HISTORY_SIZE];
 };

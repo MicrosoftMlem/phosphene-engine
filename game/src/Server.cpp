@@ -163,10 +163,15 @@ void runServer() {
         for (int i = 0; i < snapshot.playerCount && i < 2; i++) {
             snapshot.players[i].lastAppliedSequence = lastAppliedSequence[i]; //telling player that the below info is from this (N) snapshot
             snapshot.players[i].position = gameState.players[i].position;
+            snapshot.players[i].velocity = gameState.players[i].velocity;
+            snapshot.players[i].dashDirection = gameState.players[i].dashDirection;
+            snapshot.players[i].dashTimeLeft = gameState.players[i].dashTimeLeft;
+            snapshot.players[i].dashRechargeTimer = gameState.players[i].dashRechargeTimer;
+            snapshot.players[i].dashCharges = gameState.players[i].dashCharges;
+            snapshot.players[i].grounded = gameState.players[i].grounded;
             snapshot.players[i].lookDirection = gameState.players[i].lookDirection;
             snapshot.players[i].health = gameState.players[i].health;
             snapshot.players[i].sliding = gameState.players[i].sliding;
-            snapshot.players[i].dashTimeLeft = gameState.players[i].dashTimeLeft;
         }
         snapshot.roundWins[0] = gameState.roundWins[0];
         snapshot.roundWins[1] = gameState.roundWins[1];

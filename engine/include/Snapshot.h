@@ -5,10 +5,15 @@ struct PlayerSnapshot {
     unsigned int lastAppliedSequence;
 
     glm::vec3 position;
+    glm::vec3 velocity;
     glm::vec3 lookDirection;
+    glm::vec3 dashDirection;
     float health;
-    bool sliding;
     float dashTimeLeft;
+    float dashRechargeTimer;
+    int dashCharges;
+    bool grounded;
+    bool sliding;
 };
 
 struct Snapshot {

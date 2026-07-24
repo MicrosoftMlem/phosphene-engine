@@ -9,7 +9,7 @@ public:
     ~NetworkClient();
 
     bool connectToServer(const char* host, int port);
-    void sendCommand(InputCommand command);
+    unsigned int sendCommand(InputCommand command);
     void poll();
     
     bool hasSnapshot() const { return snapshotRecieved; }

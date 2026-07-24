@@ -40,8 +40,8 @@ bool NetworkClient::connectToServer(const char* hostName, int port) {
     return false;
 }
 
-void NetworkClient::sendCommand(InputCommand command) {
-    if (peer == nullptr) return;
+unsigned int NetworkClient::sendCommand(InputCommand command) {
+    if (peer == nullptr) return 0;
 
     command.sequence = nextSequence;
     nextSequence++;
@@ -58,6 +58,8 @@ void NetworkClient::sendCommand(InputCommand command) {
 
     ENetPacket* packet = enet_packet_create(&outgoing, sizeof(CommandPacket), 0);
     enet_peer_send(peer, 0, packet);
+
+    return command.sequence;
 }
 
 
