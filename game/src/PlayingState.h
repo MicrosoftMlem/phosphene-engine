@@ -59,4 +59,5 @@ private:
     InputCommand commandHistory[COMMAND_HISTORY_SIZE];
 
     unsigned int lastReconciledTick = 0;
+    glm::vec3 positionError = glm::vec3(0.0f);
 };

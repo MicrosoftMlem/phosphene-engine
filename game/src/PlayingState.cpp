@@ -92,6 +92,8 @@ void PlayingState::update(float deltaTime) {
         if (snap.tick != lastReconciledTick) {
             lastReconciledTick = snap.tick;
 
+            glm::vec3 predictedPosition = gameState.players[myIndex].position;
+
             //first do other players, from the servers state with no prediction
             for (int i = 0; i < snap.playerCount && i < (int)gameState.players.size(); i++) {
                 if (i == myIndex) continue;
@@ -125,6 +127,15 @@ void PlayingState::update(float deltaTime) {
 
             gameState.roundWins[0] = snap.roundWins[0];
             gameState.roundWins[1] = snap.roundWins[1];
+
+            //after the replay, see how wrong were we:
+            glm::vec3 error = predictedPosition - gameState.players[myIndex].position;
+            if (glm::length(error) > 2.0f) {
+                positionError = glm::vec3(0.0f); //too big to smooth, teleport
+            }
+            else {
+                positionError += error; //for lerping
+            }
         }
     }
 
@@ -176,12 +187,13 @@ void PlayingState::update(float deltaTime) {
         processPlayerInput(gameState, myIndex, command, TICK_RATE);
     }
 
-
-
+    //per frame (runs always): 
+    positionError = glm::mix(positionError, glm::vec3(0.0f), 10.0f * deltaTime);
 
     float targetHeight = gameState.players[myIndex].sliding ? 0.8f : 1.7f;
     cameraHeight = glm::mix(cameraHeight, targetHeight, 12.0f * deltaTime);
-    activeCamera.position = gameState.players[myIndex].position + glm::vec3(0.0f, cameraHeight, 0.0f);
+    //camera might not actually be at players real pos (where colliders are). bc its lerped to stop jitter (positionError is added on)
+    activeCamera.position = gameState.players[myIndex].position + positionError + glm::vec3(0.0f, cameraHeight, 0.0f);
 
     float targetFov = (gameState.players[myIndex].sliding || (gameState.players[myIndex].dashTimeLeft > 0.0f)) ? 85.0f : 70.0f;
     currentFov = glm::mix(currentFov, targetFov, 8.0f * deltaTime);
