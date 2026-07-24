@@ -10,6 +10,7 @@
 #include <thread>
 #include <chrono>
 #include <cstring>
+#include <deque>
 
 void runServer() {
     ENetAddress myAddress;
@@ -38,7 +39,10 @@ void runServer() {
     giveRoundItems(gameState.players[0]);
     giveRoundItems(gameState.players[1]);
 
-    std::vector<InputCommand> commands(2); //one command slot per player
+    std::vector<std::deque<InputCommand>> pendingCommands(2);
+    std::vector<InputCommand> lastApplied(2);
+    std::vector<unsigned int> highestRecieved(2, 0);
+    std::vector<unsigned int> lastAppliedSequence(2, 0);
 
     RoundPhase previousPhase = RoundPhase::Active;
 
@@ -46,8 +50,6 @@ void runServer() {
     ENetEvent event;
     int tickCounter = 0;
     int nextPlayerIndex = 0;
-
-    std::vector<unsigned int> lastAppliedSequence(2, 0);
 
     auto nextTick = std::chrono::steady_clock::now();
 
@@ -82,35 +84,23 @@ void runServer() {
                 case ENET_EVENT_TYPE_RECEIVE: {
                     if (event.packet->dataLength == sizeof(CommandPacket)) {
                         int playerIndex = (int)(intptr_t)event.peer->data;
-                        if (playerIndex < (int)commands.size()) {
+                        if (playerIndex < (int)pendingCommands.size()) {
                             CommandPacket incoming;
                             memcpy(&incoming, event.packet->data, sizeof(CommandPacket));
 
                             for (int i = 0; i < 3; i++) {
                                 const InputCommand& c = incoming.commands[i];
-                                if (c.sequence == 0) continue; //0 means its an empty slot
-                                if (c.sequence <= lastAppliedSequence[playerIndex]) continue; //already seen
+                                if (c.sequence == 0) continue;
+                                if (c.sequence <= highestRecieved[playerIndex]) continue;
+                                
+                                pendingCommands[playerIndex].push_back(c);
+                                highestRecieved[playerIndex] = c.sequence;
 
-                                //merge: edge inputs OR together so none are lost
-                                commands[playerIndex].primaryPressed |= c.primaryPressed;
-                                commands[playerIndex].secondaryPressed |= c.secondaryPressed;
-                                commands[playerIndex].dash |= c.dash;
-                                commands[playerIndex].jump |= c.jump;
-                                commands[playerIndex].equipWeapon |= c.equipWeapon;
-                                commands[playerIndex].equipAbility|= c.equipAbility;
+                                
+                            }
 
-                                //continuous state: newest wins
-                                commands[playerIndex].moveForward = c.moveForward;
-                                commands[playerIndex].moveBack = c.moveBack;
-                                commands[playerIndex].moveLeft = c.moveLeft;
-                                commands[playerIndex].moveRight = c.moveRight;
-                                commands[playerIndex].crouch = c.crouch;
-                                commands[playerIndex].primaryHeld = c.primaryHeld;
-                                commands[playerIndex].secondaryHeld = c.secondaryHeld;
-                                commands[playerIndex].lookDirection = c.lookDirection;
-                                commands[playerIndex].sequence = c.sequence;
-
-                                lastAppliedSequence[playerIndex] = c.sequence;
+                            while (pendingCommands[playerIndex].size() > 8) {
+                                pendingCommands[playerIndex].pop_front(); //discard the old stale commands
                             }
                         }
                     }
@@ -152,7 +142,27 @@ void runServer() {
 
 
         for (int i = 0; i < (int)gameState.players.size(); i++) {
-            processPlayerInput(gameState, i, commands[i], tickRate);
+            InputCommand command;
+
+            if (!pendingCommands[i].empty()) {
+                command = pendingCommands[i].front();
+                pendingCommands[i].pop_front();
+                lastApplied[i] = command;
+                lastAppliedSequence[i] = command.sequence;
+            }
+            else {
+                //no input coming in, starved. hold movement and drop edges so nothing repeats
+                command = lastApplied[i];
+                command.primaryPressed = false;
+                command.secondaryPressed = false;
+                command.dash = false;
+                command.jump = false;
+                command.equipWeapon = false;
+                command.equipAbility = false;
+                //dont advance lastAppliedSequence bc nothing new was consumed
+            }
+
+            processPlayerInput(gameState, i, command, tickRate);
         }
 
 
@@ -184,15 +194,6 @@ void runServer() {
         ENetPacket* packet = enet_packet_create(buffer, sizeof(buffer), 0);
         enet_host_broadcast(server, 0, packet); //sends to every connected peer. 0 means unreliable
 
-        //clear the edges so they dont repeat:
-        for (InputCommand& c : commands) {
-            c.primaryPressed = false;
-            c.secondaryPressed = false;
-            c.dash = false;
-            c.jump = false;
-            c.equipWeapon = false;
-            c.equipAbility = false;
-        }
 
 
         //debug output:

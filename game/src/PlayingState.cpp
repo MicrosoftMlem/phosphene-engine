@@ -77,31 +77,62 @@ void PlayingState::update(float deltaTime) {
     int myIndex = network.getPlayerIndex();
     if (myIndex < 0 || myIndex >= (int)gameState.players.size()) return; // not recieved welcome packet yet. should never be >= players.size() (out of range)
 
+    //colliders need to exist before sim runs (eg reconcilation)
+    gameState.colliders.clear();
+    for (GameObject& obj : level.objects) {
+        if (obj.collidable) {
+            gameState.colliders.push_back(obj.getAABB());
+        }
+    }
+
     //apply snapshot
     if (network.hasSnapshot()) {
         const Snapshot& snap = network.getSnapshot();
-        for (int i = 0; i < snap.playerCount && i < (int)gameState.players.size(); i++) {
-            gameState.players[i].position = snap.players[i].position;
-            gameState.players[i].health = snap.players[i].health;
-            gameState.players[i].sliding = snap.players[i].sliding;
-            gameState.players[i].dashTimeLeft = snap.players[i].dashTimeLeft;
+
+        if (snap.tick != lastReconciledTick) {
+            lastReconciledTick = snap.tick;
+
+            //first do other players, from the servers state with no prediction
+            for (int i = 0; i < snap.playerCount && i < (int)gameState.players.size(); i++) {
+                if (i == myIndex) continue;
+                gameState.players[i].position = snap.players[i].position;
+                gameState.players[i].lookDirection = snap.players[i].lookDirection;
+                gameState.players[i].health = snap.players[i].health;
+                gameState.players[i].sliding = snap.players[i].sliding;
+            }
+
+            //now our player, rewind to the servers authorative state:
+            PlayerState& me = gameState.players[myIndex];
+            const PlayerSnapshot& s = snap.players[myIndex];
+            me.position = s.position;
+            me.velocity = s.velocity;
+            me.grounded = s.grounded;
+            me.health = s.health;
+            me.sliding = s.sliding;
+            me.dashTimeLeft = s.dashTimeLeft;
+            me.dashCharges = s.dashCharges;
+            me.dashRechargeTimer = s.dashRechargeTimer;
+            me.dashDirection = s.dashDirection;
+
+            //then replay everything the server hasnt seen yet:
+            for (unsigned int seq = s.lastAppliedSequence + 1; seq < network.getNextSequence(); seq++) {
+                InputCommand& c = commandHistory[seq % COMMAND_HISTORY_SIZE];
+                if (c.sequence != seq) continue; //slot overwritten, history too short
+
+                resetPlayerStats(me);
+                processPlayerInput(gameState, myIndex, c, TICK_RATE);
+            }
+
+            gameState.roundWins[0] = snap.roundWins[0];
+            gameState.roundWins[1] = snap.roundWins[1];
         }
-        gameState.roundWins[0] = snap.roundWins[0];
-        gameState.roundWins[1] = snap.roundWins[1];
     }
 
 
-    //fixed timestep
+    //fixed timestep: build input, send and then predict
     tickAccumulator += deltaTime;
     while (tickAccumulator >= TICK_RATE) {
         tickAccumulator -= TICK_RATE;
-
-        gameState.colliders.clear();
-        for (GameObject& obj : level.objects) {
-            if (obj.collidable) {
-                gameState.colliders.push_back(obj.getAABB());
-            }
-        }
 
         InputCommand command;
         
@@ -136,7 +167,13 @@ void PlayingState::update(float deltaTime) {
         primaryWasDown = primaryIsDown; //remember for next frame
         secondaryWasDown = secondaryIsDown;
 
-        network.sendCommand(command);
+        unsigned int seq = network.sendCommand(command);
+        command.sequence = seq;
+        commandHistory[seq % COMMAND_HISTORY_SIZE] = command;
+
+        //predict: run my input now, dont wait for server
+        resetPlayerStats(gameState.players[myIndex]);
+        processPlayerInput(gameState, myIndex, command, TICK_RATE);
     }
 
 

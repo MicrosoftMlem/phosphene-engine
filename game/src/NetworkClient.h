@@ -15,6 +15,8 @@ public:
     bool hasSnapshot() const { return snapshotRecieved; }
     const Snapshot& getSnapshot() const { return latestSnapshot; }
     int getPlayerIndex() const { return myPlayerIndex; }
+    
+    unsigned int getNextSequence() const { return nextSequence; }
 
 private:
     ENetHost* host;

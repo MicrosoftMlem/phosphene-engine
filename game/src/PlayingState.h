@@ -57,4 +57,6 @@ private:
 
     static constexpr int COMMAND_HISTORY_SIZE = 64;
     InputCommand commandHistory[COMMAND_HISTORY_SIZE];
+
+    unsigned int lastReconciledTick = 0;
 };
