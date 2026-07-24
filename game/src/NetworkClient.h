@@ -9,7 +9,7 @@ public:
     ~NetworkClient();
 
     bool connectToServer(const char* host, int port);
-    void sendCommand(const InputCommand& command);
+    void sendCommand(InputCommand command);
     void poll();
     
     bool hasSnapshot() const { return snapshotRecieved; }
@@ -22,6 +22,9 @@ private:
 
     Snapshot latestSnapshot;
     bool snapshotRecieved = false;
+
+    InputCommand recentCommands[3];
+    unsigned int nextSequence = 1;
 
     int myPlayerIndex = -1;
 };

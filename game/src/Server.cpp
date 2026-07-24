@@ -47,8 +47,11 @@ void runServer() {
     int tickCounter = 0;
     int nextPlayerIndex = 0;
 
+    std::vector<unsigned int> lastAppliedSequence(2, 0);
+
     auto nextTick = std::chrono::steady_clock::now();
 
+    //tick loop:
     while (true) {
         nextTick += std::chrono::microseconds(16667); // 1/60 in microseconds
         //this is the constant loop of running the netcode
@@ -77,10 +80,38 @@ void runServer() {
                 //event.peer->data is a spare void* enet gives u to put a pointer in. (void*)(intptr_t) is a way to put a int in a pointer slot
 
                 case ENET_EVENT_TYPE_RECEIVE: {
-                    if (event.packet->dataLength == sizeof(InputCommand)) {
+                    if (event.packet->dataLength == sizeof(CommandPacket)) {
                         int playerIndex = (int)(intptr_t)event.peer->data;
                         if (playerIndex < (int)commands.size()) {
-                            memcpy(&commands[playerIndex], event.packet->data, sizeof(InputCommand));
+                            CommandPacket incoming;
+                            memcpy(&incoming, event.packet->data, sizeof(CommandPacket));
+
+                            for (int i = 0; i < 3; i++) {
+                                const InputCommand& c = incoming.commands[i];
+                                if (c.sequence == 0) continue; //0 means its an empty slot
+                                if (c.sequence <= lastAppliedSequence[playerIndex]) continue; //already seen
+
+                                //merge: edge inputs OR together so none are lost
+                                commands[playerIndex].primaryPressed |= c.primaryPressed;
+                                commands[playerIndex].secondaryPressed |= c.secondaryPressed;
+                                commands[playerIndex].dash |= c.dash;
+                                commands[playerIndex].jump |= c.jump;
+                                commands[playerIndex].equipWeapon |= c.equipWeapon;
+                                commands[playerIndex].equipAbility|= c.equipAbility;
+
+                                //continuous state: newest wins
+                                commands[playerIndex].moveForward = c.moveForward;
+                                commands[playerIndex].moveBack = c.moveBack;
+                                commands[playerIndex].moveLeft = c.moveLeft;
+                                commands[playerIndex].moveRight = c.moveRight;
+                                commands[playerIndex].crouch = c.crouch;
+                                commands[playerIndex].primaryHeld = c.primaryHeld;
+                                commands[playerIndex].secondaryHeld = c.secondaryHeld;
+                                commands[playerIndex].lookDirection = c.lookDirection;
+                                commands[playerIndex].sequence = c.sequence;
+
+                                lastAppliedSequence[playerIndex] = c.sequence;
+                            }
                         }
                     }
                     enet_packet_destroy(event.packet); //we own the packet, so we are responsible for destroying it (dont want to mem leak)
@@ -146,6 +177,16 @@ void runServer() {
 
         ENetPacket* packet = enet_packet_create(buffer, sizeof(buffer), 0);
         enet_host_broadcast(server, 0, packet); //sends to every connected peer. 0 means unreliable
+
+        //clear the edges so they dont repeat:
+        for (InputCommand& c : commands) {
+            c.primaryPressed = false;
+            c.secondaryPressed = false;
+            c.dash = false;
+            c.jump = false;
+            c.equipWeapon = false;
+            c.equipAbility = false;
+        }
 
 
         //debug output:

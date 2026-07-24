@@ -40,9 +40,23 @@ bool NetworkClient::connectToServer(const char* hostName, int port) {
     return false;
 }
 
-void NetworkClient::sendCommand(const InputCommand& command) {
+void NetworkClient::sendCommand(InputCommand command) {
     if (peer == nullptr) return;
-    ENetPacket* packet = enet_packet_create(&command, sizeof(InputCommand), 0);
+
+    command.sequence = nextSequence;
+    nextSequence++;
+
+    //shift the history left, with the newest on the end
+    recentCommands[0] = recentCommands[1];
+    recentCommands[1] = recentCommands[2];
+    recentCommands[2] = command;
+
+    CommandPacket outgoing;
+    outgoing.commands[0] = recentCommands[0];
+    outgoing.commands[1] = recentCommands[1];
+    outgoing.commands[2] = recentCommands[2];
+
+    ENetPacket* packet = enet_packet_create(&outgoing, sizeof(CommandPacket), 0);
     enet_peer_send(peer, 0, packet);
 }
 

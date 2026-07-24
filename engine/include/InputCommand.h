@@ -2,6 +2,8 @@
 #include <glm/glm.hpp>
 
 struct InputCommand {
+    unsigned int sequence = 0; // 0 means 'empty slot'
+
     //movement intent:
     bool moveForward = false;
     bool moveBack = false;

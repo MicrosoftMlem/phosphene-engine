@@ -25,3 +25,7 @@ enum class MessageType : unsigned char { //bytes that every packet starts with t
 struct WelcomeMessage { //when a client connects
     int playerIndex;
 };
+
+struct CommandPacket {
+    InputCommand commands[3]; //the last 3 commands, newest last
+};
