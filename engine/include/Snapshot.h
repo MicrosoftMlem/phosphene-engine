@@ -16,13 +16,25 @@ struct PlayerSnapshot {
     bool sliding;
 };
 
+
+struct EntitySnapshot {
+    int type; // EntityType as an int
+    glm::vec3 position;
+    float rotationY;
+    bool isRed;
+};
+
+
 struct Snapshot {
     unsigned int tick; //for reconciliation later on
     int playerCount;
     PlayerSnapshot players[2]; //fixed size so it can go in a net packet
     int roundWins[2];
     int phase; //RoundPhase as an int
+    int entityCount;
+    EntitySnapshot entities[16]; //currently 16 max.
 };
+
 
 enum class MessageType : unsigned char { //bytes that every packet starts with to identify its type
     Snapshot = 0,

@@ -5,6 +5,7 @@
 #include "InputCommand.h"
 #include "Snapshot.h"
 #include "RoundItems.h"
+#include "TrafficLightEntity.h"
 #include <enet/enet.h>
 #include <iostream>
 #include <thread>
@@ -186,6 +187,25 @@ void runServer() {
         snapshot.roundWins[0] = gameState.roundWins[0];
         snapshot.roundWins[1] = gameState.roundWins[1];
         snapshot.phase = (int)gameState.phase;
+
+        snapshot.entityCount = 0;
+        for (WorldEntity* entity : gameState.worldEntities) {
+            if (snapshot.entityCount >= 16) break; //dont go over the limit
+
+            EntitySnapshot& e = snapshot.entities[snapshot.entityCount];
+            e.type = (int)entity->getType();
+            e.position = entity->position;
+            e.rotationY = 0.0f;
+            e.isRed = false;
+
+            if (entity->getType() == EntityType::TrafficLight) {
+                TrafficLightEntity* tl = static_cast<TrafficLightEntity*>(entity);
+                e.rotationY = tl->getRotationY();
+                e.isRed = tl->getIsRed();
+            }
+
+            snapshot.entityCount++;
+        }
 
         unsigned char buffer[1 + sizeof(Snapshot)];
         buffer[0] = (unsigned char)MessageType::Snapshot;

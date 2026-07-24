@@ -240,35 +240,28 @@ void PlayingState::render() {
         obj.draw(shader);
     }
 
-    for (WorldEntity* entity : gameState.worldEntities) {
-        if (entity->getType() == EntityType::TrafficLight) {
-            TrafficLightEntity* tl = static_cast<TrafficLightEntity*>(entity);
+    if (network.hasSnapshot()) {
+        const Snapshot& snap = network.getSnapshot();
 
-            glm::mat4 model = glm::mat4(1.0f); //identity
-            model = glm::translate(model, entity->position); //move it to the entities pos
-            model = glm::rotate(model, tl->getRotationY(), glm::vec3(0.0f, 1.0f, 0.0f)); //cosmetic y spin
+        for (int i = 0; i < snap.entityCount; i++) {
+            const EntitySnapshot& e = snap.entities[i];
 
-            int modelLoc = glGetUniformLocation(shader.ID, "model"); //get the modelLoc var in the shader
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model)); //tell the shader its pos (model)
+            if (e.type == (int)EntityType::TrafficLight) {
+                glm::mat4 model = glm::translate(glm::mat4(1.0f), e.position);
+                model = glm::rotate(model, e.rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
 
-            glm::vec3 emissiveColor;
-            if (tl->getIsRed()) {
-                emissiveColor = glm::vec3(1.0f, 0.0f, 0.0f);
+                glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+                glm::vec3 emissiveColor = e.isRed ? glm::vec3(1.0f, 0.0f, 0.0f)
+                                                  : glm::vec3(0.0f, 1.0f, 0.0f);
+                trafficLightTexture.bind();
+                glUniform3f(glGetUniformLocation(shader.ID, "tint"), 1.0f, 1.0f, 1.0f);
+                glUniform3f(glGetUniformLocation(shader.ID, "emissive"), emissiveColor.r, emissiveColor.g, emissiveColor.b);
+                glUniform2f(glGetUniformLocation(shader.ID, "textureScale"), 1.0f, 1.0f);
+
+                trafficLightMesh.draw();
             }
-            else {
-                emissiveColor = glm::vec3(0.0f, 1.0f, 0.0f);
-            }
-
-
-            trafficLightTexture.bind();
-
-            glUniform3f(glGetUniformLocation(shader.ID, "tint"), 1.0f, 1.0f, 1.0f);
-            glUniform3f(glGetUniformLocation(shader.ID, "emissive"), emissiveColor.r, emissiveColor.g, emissiveColor.b);
-            glUniform2f(glGetUniformLocation(shader.ID, "textureScale"), 1.0f, 1.0f);
-
-            trafficLightMesh.draw(); //draw the mesh
         }
-
     }
 
 
