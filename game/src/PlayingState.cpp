@@ -21,6 +21,9 @@
 #include "RoundItems.h"
 
 
+//this is the entire game state of the actual game
+
+
 PlayingState::PlayingState(GLFWwindow* window, NetworkClient& networkRef)  //this first part is the member initialisation list. it specifies HOW to construct members before the constructor is run
     : shader("basic.vert", "basic.frag"),
       texture("checker.png"),

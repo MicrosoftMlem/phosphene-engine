@@ -26,7 +26,7 @@ struct EntitySnapshot {
 
 
 struct Snapshot {
-    unsigned int tick; //for reconciliation later on
+    unsigned int tick; //for reconciliation
     int playerCount;
     PlayerSnapshot players[2]; //fixed size so it can go in a net packet
     int roundWins[2];

@@ -22,6 +22,7 @@
 #include "OBJLoader.h"
 #include "Server.h"
 #include "NetworkClient.h"
+#include "StateManager.h"
 
 /*
 when we are telling the gpu to do stuff we have 2 things:
@@ -53,6 +54,7 @@ float lastFrame = 0.0f;
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     Camera* camera = (Camera*)glfwGetWindowUserPointer(window); //get the stored camera pointer (its stored as a void* so we cast it to a camera*)
+    if (camera == nullptr) return;
 
     if (firstMouse) { //stop the mouse from jumping at startup bc the cursor could be anywhere
         lastX = xpos;
@@ -120,7 +122,8 @@ int main(int argc, char** argv) {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //hides cursor and locks it so it wont come out window when doing camera moving w/ mouse
 
 
-    GameStateBase* currentState = new PlayingState(window, network); //so to change states we just change this
+    StateManager states(window);
+    states.requestMenu();
 
 
     while (!glfwWindowShouldClose(window)) {
@@ -130,10 +133,8 @@ int main(int argc, char** argv) {
         lastFrame = currentFrame;
 
         
-        currentState->update(deltaTime);
-        //we do -> bc currentState is a variable (and so this becomes PlayingState::update(). we can later change it do ExampleState so it does ExampleState::Update())
-
-        currentState->render();
+        states.update(deltaTime);
+        states.render();
 
 
         glfwSwapBuffers(window); //swaps a back buffer ontop which should have game frame drawn to. back buffers reduce tearing etc
