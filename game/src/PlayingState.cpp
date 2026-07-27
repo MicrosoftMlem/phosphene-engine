@@ -75,7 +75,7 @@ PlayingState::PlayingState(GLFWwindow* window, NetworkClient& networkRef)  //thi
 void PlayingState::update(float deltaTime) {
     uiTime += deltaTime;
 
-    network.poll();
+    network.poll((float)glfwGetTime());
 
     int myIndex = network.getPlayerIndex();
     if (myIndex < 0 || myIndex >= (int)gameState.players.size()) return; // not recieved welcome packet yet. should never be >= players.size() (out of range)
@@ -133,6 +133,7 @@ void PlayingState::update(float deltaTime) {
 
             //after the replay, see how wrong were we:
             glm::vec3 error = predictedPosition - gameState.players[myIndex].position;
+            std::cout << "error: " << glm::length(error) << "\n";
             if (glm::length(error) > 2.0f) {
                 positionError = glm::vec3(0.0f); //too big to smooth, teleport
             }
@@ -187,6 +188,8 @@ void PlayingState::update(float deltaTime) {
 
         //predict: run my input now, dont wait for server
         resetPlayerStats(gameState.players[myIndex]);
+
+        previousPosition = gameState.players[myIndex].position;
         processPlayerInput(gameState, myIndex, command, TICK_RATE);
     }
 
@@ -196,7 +199,9 @@ void PlayingState::update(float deltaTime) {
     float targetHeight = gameState.players[myIndex].sliding ? 0.8f : 1.7f;
     cameraHeight = glm::mix(cameraHeight, targetHeight, 12.0f * deltaTime);
     //camera might not actually be at players real pos (where colliders are). bc its lerped to stop jitter (positionError is added on)
-    activeCamera.position = gameState.players[myIndex].position + positionError + glm::vec3(0.0f, cameraHeight, 0.0f);
+    float alpha = tickAccumulator / TICK_RATE; //0-1 how far into the next tick we are
+    glm::vec3 renderPos = glm::mix(previousPosition, gameState.players[myIndex].position, alpha);
+    activeCamera.position = renderPos + positionError + glm::vec3(0.0f, cameraHeight, 0.0f);
 
     float targetFov = (gameState.players[myIndex].sliding || (gameState.players[myIndex].dashTimeLeft > 0.0f)) ? 85.0f : 70.0f;
     currentFov = glm::mix(currentFov, targetFov, 8.0f * deltaTime);
@@ -206,6 +211,9 @@ void PlayingState::update(float deltaTime) {
 void PlayingState::render() {
     int myIndex = network.getPlayerIndex();
     if (myIndex < 0) return;
+
+
+    float renderTime = (float)glfwGetTime() - 0.1f; //render remote players 0.1 seconds (100 ms) in the past
 
     //then render:
 
@@ -272,9 +280,17 @@ void PlayingState::render() {
     for (int i = 0; i < gameState.players.size(); i++) {
         if (i == myIndex) continue; //dont draw ourself
 
-        PlayerState& p = gameState.players[i];
+        PlayerSnapshot interp;
+        glm::vec3 drawPos;
+        if (network.getInterpolatedPlayer(i, renderTime, interp)) {
+            drawPos = interp.position;
+        }
+        else {
+            drawPos = gameState.players[i].position; //falls back to newest, uninterpreted packet
+        }
 
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), p.position); //make an identity and move it to the players position
+
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), drawPos); //make an identity and move it to the players position
 
         model = glm::translate(model, glm::vec3(0.0f, 0.9f, 0.0f)); //cube is centred so move it halfway up player
         model = glm::scale(model, glm::vec3(0.6f, 1.8f, 0.6f)); //scale the cube to the players size

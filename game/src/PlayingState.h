@@ -60,4 +60,5 @@ private:
 
     unsigned int lastReconciledTick = 0;
     glm::vec3 positionError = glm::vec3(0.0f);
+    glm::vec3 previousPosition = glm::vec3(0.0f);
 };
