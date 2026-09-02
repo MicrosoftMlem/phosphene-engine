@@ -22,6 +22,12 @@ between state swaps.
 
 - StateManager::PerformTransition() needs documentation
 
+** Current notes:
+
+Simulation.cpp handles deciding game phase changes.
+I have added new 'Transition' phase which should trigger when
+waiting for other player to load in, and when game ends
+
 ** TODOS:
 
 *** TODO Make player 'freeze' effect, be also considered by the client.
@@ -29,15 +35,20 @@ between state swaps.
 *** TODO Go over the UIRenderer class, and then expand it
 *** TODO Implement text in the UI
 *** TODO Implement IDE tool for going over 'ISSUE' comments
-*** TODO Sync server and client level loading, - both can load different levels (desync)
 *** TODO Randomise player spawn locations
 *** TODO Plan the round win phase
 *** TODO Plan the match win phase
+*** TODO Implement the 'Transition' RoundPhase
 *** TODO Fix WorldEntity class so we can access the inheriting classes methods (Server.cpp:216)
+*** TODO Implement disconnect handling
+
+*** TODO Add player items to the snapshot
 
 ** Fixes:
 
 The numerical code at the end is for my own reference for personal documentation
+
+This list/section has been replaced for the CHANGELOG and might contain outdated info
 
 - Updated default player health const to 120 to match ui and round health - 14.5
 - Made client read snap.phase after match end  - 14.1

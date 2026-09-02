@@ -10,7 +10,7 @@ class WorldEntity; //forward declare
 
 enum class EquipSlot { Weapon, Ability };
 
-enum class RoundPhase { Active, RoundOver, MatchOver };
+enum class RoundPhase { Active, RoundOver, MatchOver, Transition };
 
 struct PlayerState {
   glm::vec3 position = glm::vec3(0.0f);
@@ -39,6 +39,8 @@ struct PlayerState {
 
   bool sliding = false;
 
+  int weaponInt = -1;
+  int abilityInt = -1;
   Item* weapon = nullptr;
   Item* ability = nullptr;
   EquipSlot equipped = EquipSlot::Weapon;
@@ -52,6 +54,8 @@ struct GameState {
   RoundPhase phase = RoundPhase::Active;
   int roundWins[2] = {0, 0};
   float phaseTimer = 0.0f;
-  int matchWinner = -1; 
+  int matchWinner = -1;
+  // the server would have this true
+  bool authorative = false;
 };
 

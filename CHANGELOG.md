@@ -5,7 +5,18 @@ document.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Changed
+- Players have the weapon slot equipped automatically at start of
+  round now
+
+### Fixed
+- Client never had item instances, so item effects were unpredicted on
+  client. A player holding a movement-modifying item desynced every
+  tick. Server now sends equipped item id's in the snapshot and the
+  client predicts passive item effects (item use() stays
+  server-authoritative) #14.2
+- gameLevels.h's level list was non-inline and was an ODR violation.
+  
 
 ## [0.2.1] - 2026-09-02
 

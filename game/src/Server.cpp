@@ -38,8 +38,10 @@ void runServer() {
   // than the highest value, so it all works well.
   int randomLevelIndex = rand() % gameLevelsCount;
   std::string levelPath = levelList[randomLevelIndex];
-  
+
   GameState gameState;
+  // the server is authorative
+  gameState.authorative = true;
   Level level = loadLevel(levelPath, nullptr, nullptr);
 
   PlayerState player0;
@@ -52,8 +54,12 @@ void runServer() {
   gameState.players.push_back(player0);
   gameState.players.push_back(player1);
 
-  giveRoundItems(gameState.players[0]);
-  giveRoundItems(gameState.players[1]);
+  //todo - at some point we need to randomise this
+  int playerWeaponInt = 1; // pistol
+  int playerAbilityInt = 2; // traffic light
+  
+  giveRoundItems(gameState.players[0], playerWeaponInt, playerAbilityInt);
+  giveRoundItems(gameState.players[1], playerWeaponInt, playerAbilityInt);
 
   std::vector<std::deque<InputCommand>> pendingCommands(2);
   std::vector<InputCommand> lastApplied(2);
@@ -165,8 +171,9 @@ void runServer() {
     //evaluate if round has just become active from RoundOver
     if (previousPhase == RoundPhase::RoundOver &&
         gameState.phase == RoundPhase::Active) {
-      giveRoundItems(gameState.players[0]);
-      giveRoundItems(gameState.players[1]);
+      // todo - randomise items
+      giveRoundItems(gameState.players[0], playerWeaponInt, playerAbilityInt);
+      giveRoundItems(gameState.players[1], playerWeaponInt, playerAbilityInt);
     }
     previousPhase = gameState.phase;
 
@@ -213,6 +220,8 @@ void runServer() {
       snapshot.players[i].lookDirection = gameState.players[i].lookDirection;
       snapshot.players[i].health = gameState.players[i].health;
       snapshot.players[i].sliding = gameState.players[i].sliding;
+      snapshot.players[i].weaponItem = gameState.players[i].weaponInt;
+      snapshot.players[i].abilityItem = gameState.players[i].abilityInt;
     }
     snapshot.roundWins[0] = gameState.roundWins[0];
     snapshot.roundWins[1] = gameState.roundWins[1];

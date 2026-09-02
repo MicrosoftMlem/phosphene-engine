@@ -25,18 +25,18 @@
 // i think this is the client side state, I should check
 
 PlayingState::PlayingState(
-    GLFWwindow *window,
-    NetworkClient &networkRef) // this first part is the member initialisation
-                               // list. it specifies HOW to construct members
-                               // before the constructor is run
-    : shader("basic.vert", "basic.frag"), texture("checker.png"),
-      cubeMesh(computeNormals(Primitive::rawCubeVertices)),
-      activeCamera(glm::vec3(0.0f, 0.0f, 3.0f)),
-      testMesh(loadOBJ("sphere.obj")),
-      trafficLightMesh(loadOBJ("NewTrafficLightEntity.obj")),
-      trafficLightAlbedo("TrafficLightEntityAlbedo.png"),
-      trafficLightEmissive("TrafficLightEntityEmissive.png"),
-      playerTexture("enemy_player_checker.png"), network(networkRef)
+			   GLFWwindow *window,
+			   NetworkClient &networkRef) // this first part is the member initialisation
+// list. it specifies HOW to construct members
+// before the constructor is run
+: shader("basic.vert", "basic.frag"), texture("checker.png"),
+  cubeMesh(computeNormals(Primitive::rawCubeVertices)),
+  activeCamera(glm::vec3(0.0f, 0.0f, 3.0f)),
+  testMesh(loadOBJ("sphere.obj")),
+  trafficLightMesh(loadOBJ("NewTrafficLightEntity.obj")),
+  trafficLightAlbedo("TrafficLightEntityAlbedo.png"),
+  trafficLightEmissive("TrafficLightEntityEmissive.png"),
+  playerTexture("enemy_player_checker.png"), network(networkRef)
 
 { // then this is the constructor
   this->window = window;
@@ -46,10 +46,10 @@ PlayingState::PlayingState(
 
   if (!level.lights.empty()) {
     worldLightPos =
-        level.lights[0]; // set the light pos to the first light in the level
+      level.lights[0]; // set the light pos to the first light in the level
   } else {
     worldLightPos =
-        glm::vec3(5.0f, 10.0f, 5.0f); // default light pos if no lights in level
+      glm::vec3(5.0f, 10.0f, 5.0f); // default light pos if no lights in level
   }
 
   PlayerState player0; // player 0's playerstate
@@ -72,12 +72,16 @@ void PlayingState::update(float deltaTime) {
 
   
   network.poll((float)glfwGetTime());
-
+  
   int myIndex = network.getPlayerIndex();
-  if (myIndex < 0 || myIndex >= (int)gameState.players.size())
+  if (myIndex < 0 || myIndex >= (int)gameState.players.size()) {
     return; // not recieved welcome packet yet. should never be >=
-            // players.size() (out of range)
+    // players.size() (out of range)
+  }
 
+  // further down we check if this is our first loop with
+  // the welcome packet
+  
   // colliders need to exist before sim runs (eg reconcilation)
   gameState.colliders.clear();
   for (GameObject &obj : level.objects) {
@@ -106,9 +110,20 @@ void PlayingState::update(float deltaTime) {
         gameState.players[i].sliding = snap.players[i].sliding;
       }
 
+      
       // now our player, rewind to the servers authorative state:
       PlayerState &me = gameState.players[myIndex];
       const PlayerSnapshot &s = snap.players[myIndex];
+
+      
+      // before we set ourself to the new updated state:
+      // check if we have different items than what the server wants:
+
+      if (me.weaponInt != s.weaponItem || me.abilityInt != s.abilityItem) {
+        giveRoundItems(me, s.weaponItem, s.abilityItem);
+      }
+      
+      // ok now that we did that, we can set everything correctly
       me.position = s.position;
       me.velocity = s.velocity;
       me.grounded = s.grounded;
@@ -118,6 +133,8 @@ void PlayingState::update(float deltaTime) {
       me.dashCharges = s.dashCharges;
       me.dashRechargeTimer = s.dashRechargeTimer;
       me.dashDirection = s.dashDirection;
+      me.weaponInt = s.weaponItem;
+      me.abilityInt = s.abilityItem;
 
       // then replay everything the server hasnt seen yet:
       for (unsigned int seq = s.lastAppliedSequence + 1;
@@ -132,7 +149,17 @@ void PlayingState::update(float deltaTime) {
 
       gameState.roundWins[0] = snap.roundWins[0];
       gameState.roundWins[1] = snap.roundWins[1];
+
+      
+      // if we are in 'RoundOver' and server has just told us that we are not in
+      // 'Active'
+      if (gameState.phase == RoundPhase::RoundOver &&
+          (RoundPhase)snap.phase == RoundPhase::Active) {
+        //update myself
+        giveRoundItems(me, me.weaponInt, me.abilityInt);
+      }
       gameState.phase = (RoundPhase)snap.phase;
+      
 
       // after the replay, see how wrong were we:
       glm::vec3 error = predictedPosition - gameState.players[myIndex].position;
@@ -145,6 +172,7 @@ void PlayingState::update(float deltaTime) {
     }
   }
 
+  
   // fixed timestep: build input, send and then predict
   tickAccumulator += deltaTime;
   while (tickAccumulator >= TICK_RATE) {
@@ -158,7 +186,7 @@ void PlayingState::update(float deltaTime) {
     command.moveRight = (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS);
     command.jump = (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
     command.lookDirection =
-        activeCamera.front; // so the simulate can process where to move etc
+      activeCamera.front; // so the simulate can process where to move etc
     bool dashIsDown = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS);
     command.dash = dashIsDown && !dashWasDown;
     dashWasDown = dashIsDown;
@@ -172,19 +200,19 @@ void PlayingState::update(float deltaTime) {
     }
 
     bool primaryIsDown =
-        (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) ==
-         GLFW_PRESS); // if left mouse pressed, its true. else is false
+      (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) ==
+       GLFW_PRESS); // if left mouse pressed, its true. else is false
     bool secondaryIsDown =
-        (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
+      (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
 
     command.primaryHeld = primaryIsDown;
     command.primaryPressed =
-        primaryIsDown && !primaryWasDown; // is down and wasnt last frame
+      primaryIsDown && !primaryWasDown; // is down and wasnt last frame
 
     command.secondaryHeld = secondaryIsDown;
     command.secondaryPressed =
-        secondaryIsDown &&
-        !secondaryWasDown; // is down and wasnt down last frame
+      secondaryIsDown &&
+      !secondaryWasDown; // is down and wasnt down last frame
 
     primaryWasDown = primaryIsDown; // remember for next frame
     secondaryWasDown = secondaryIsDown;
@@ -208,16 +236,16 @@ void PlayingState::update(float deltaTime) {
   // camera might not actually be at players real pos (where colliders are). bc
   // its lerped to stop jitter (positionError is added on)
   float alpha =
-      tickAccumulator / TICK_RATE; // 0-1 how far into the next tick we are
+    tickAccumulator / TICK_RATE; // 0-1 how far into the next tick we are
   glm::vec3 renderPos =
-      glm::mix(previousPosition, gameState.players[myIndex].position, alpha);
+    glm::mix(previousPosition, gameState.players[myIndex].position, alpha);
   activeCamera.position =
-      renderPos + positionError + glm::vec3(0.0f, cameraHeight, 0.0f);
+    renderPos + positionError + glm::vec3(0.0f, cameraHeight, 0.0f);
 
   float targetFov = (gameState.players[myIndex].sliding ||
                      (gameState.players[myIndex].dashTimeLeft > 0.0f))
-                        ? 85.0f
-                        : 70.0f;
+                    ? 85.0f
+                    : 70.0f;
   currentFov = glm::mix(currentFov, targetFov, 8.0f * deltaTime);
 }
 
@@ -227,14 +255,14 @@ void PlayingState::render() {
     return;
 
   float renderTime =
-      (float)glfwGetTime() -
-      0.1f; // render remote players 0.1 seconds (100 ms) in the past
+    (float)glfwGetTime() -
+    0.1f; // render remote players 0.1 seconds (100 ms) in the past
 
   // then render:
 
   glClearColor(
-      0.0f, 0.0f, 0.0f,
-      0.77f); // sets what colour to wipe the screen to (teal). doesnt draw yet
+	       0.0f, 0.0f, 0.0f,
+	       0.77f); // sets what colour to wipe the screen to (teal). doesnt draw yet
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   // color buffer actually wipes screen with above set color. every frame starts
   // with this to cover previous frame. and depth buffer also tells it to clear
@@ -243,17 +271,17 @@ void PlayingState::render() {
 
   int w, h;
   glfwGetFramebufferSize(
-      window, &w, &h); // set w and h to the width and height of the window
+			 window, &w, &h); // set w and h to the width and height of the window
   float aspect = (float)w / (float)h;
 
   glm::mat4 view = activeCamera.getViewMatrix(); // make the camera be at right
-                                                 // pos and look in right dir
+  // pos and look in right dir
   glm::mat4 projection;                          // identity
   projection = glm::perspective(
-      glm::radians(currentFov), aspect, 0.1f,
-      100.0f); // fov = 45, aspect ratio = 800/600, near clip plane = 0.1f
-               // (close than this isnt drawn),
-               //  far clip plane 100.0f (further than this isnt drawn)
+				glm::radians(currentFov), aspect, 0.1f,
+				100.0f); // fov = 45, aspect ratio = 800/600, near clip plane = 0.1f
+  // (close than this isnt drawn),
+  //  far clip plane 100.0f (further than this isnt drawn)
 
   // NOTE: ACTIVATE THE SHADER EARLY(so that setting uniforms always affects it)
   shader.use();
@@ -357,15 +385,15 @@ void PlayingState::render() {
     }
 
     glm::mat4 model = glm::translate(
-        glm::mat4(1.0f),
-        drawPos); // make an identity and move it to the players position
+				     glm::mat4(1.0f),
+				     drawPos); // make an identity and move it to the players position
 
     model = glm::translate(
-        model, glm::vec3(0.0f, 0.9f,
-                         0.0f)); // cube is centred so move it halfway up player
+			   model, glm::vec3(0.0f, 0.9f,
+					    0.0f)); // cube is centred so move it halfway up player
     model = glm::scale(
-        model,
-        glm::vec3(0.6f, 1.8f, 0.6f)); // scale the cube to the players size
+		       model,
+		       glm::vec3(0.6f, 1.8f, 0.6f)); // scale the cube to the players size
 
     glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE,
                        glm::value_ptr(model));
@@ -385,7 +413,7 @@ void PlayingState::render() {
   glDisable(GL_DEPTH_TEST);
   glEnable(GL_BLEND); // make it so it can do alpha
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // tell gpu how to use
-                                                     // alpha
+  // alpha
 
   // w and h are already defined earlier in the func so we reuse them:
   glfwGetFramebufferSize(window, &w, &h);
@@ -432,7 +460,7 @@ void PlayingState::render() {
     float fireW = pipSize * 1.5f;
     float fireH = pipSize * 3.0f;
     float fireX =
-        px - (fireW - pipSize) * 0.5f;      // centre horizontally on the pip
+      px - (fireW - pipSize) * 0.5f;      // centre horizontally on the pip
     float fireY = pipY - (fireH - pipSize); // extend upward
     uiRenderer.drawFireRect(fireX, 30 + fireY, fireW, fireH, uiTime, i,
                             glm::vec3(0.20000f, 0.01569f, 0.18824f),
@@ -454,7 +482,7 @@ void PlayingState::render() {
     float fireW = pipSize * 1.5f;
     float fireH = pipSize * 3.0f;
     float fireX =
-        px - (fireW - pipSize) * 0.5f;      // centre horizontally on the pip
+      px - (fireW - pipSize) * 0.5f;      // centre horizontally on the pip
     float fireY = pipY - (fireH - pipSize); // extend upward
     uiRenderer.drawFireRect(fireX, fireY, fireW, fireH, uiTime, i,
                             glm::vec3(0.11373f, 0.23922f, 0.02745f),
@@ -471,5 +499,5 @@ void PlayingState::render() {
 
   glEnable(GL_DEPTH_TEST); // re-enable it for the next frames 3d
   glDisable(
-      GL_BLEND); // disable alpha for now bc idk how it will intefere with 3d
+	    GL_BLEND); // disable alpha for now bc idk how it will intefere with 3d
 }

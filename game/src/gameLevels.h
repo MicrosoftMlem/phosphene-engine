@@ -9,4 +9,5 @@
 // it should work. We need to add verification later (will be easy)
 // path is relative to game/src/
 
-const std::vector<std::string> levelList = {"test1v1level.level.json"};
+//inline so that it doesnt cause an ODR violation
+const inline std::vector<std::string> levelList = {"test1v1level.level.json"};

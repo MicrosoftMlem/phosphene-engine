@@ -44,7 +44,7 @@ void processPlayerInput(GameState &state, int playerIndex,
 
   // slide enter/exit
   float horizontalSpeed =
-      glm::length(glm::vec3(player.velocity.x, 0.0, player.velocity.z));
+    glm::length(glm::vec3(player.velocity.x, 0.0, player.velocity.z));
   if (!player.sliding && command.crouch && player.grounded &&
       horizontalSpeed > slideMinSpeed) {
     player.sliding = true;
@@ -66,7 +66,7 @@ void processPlayerInput(GameState &state, int playerIndex,
 
   // equipping
   if (command.equipWeapon) { // weapons first incase they modify movement
-                             // (below)
+    // (below)
     player.equipped = EquipSlot::Weapon;
   }
   if (command.equipAbility) {
@@ -74,7 +74,7 @@ void processPlayerInput(GameState &state, int playerIndex,
   }
 
   Item *held =
-      (player.equipped == EquipSlot::Weapon) ? player.weapon : player.ability;
+    (player.equipped == EquipSlot::Weapon) ? player.weapon : player.ability;
   // item ticking
   if (player.weapon) {
     player.weapon->tickInternal(deltaTime);
@@ -97,15 +97,19 @@ void processPlayerInput(GameState &state, int playerIndex,
     player.ability->passiveUpdate(state, playerIndex, deltaTime);
   }
 
-  // item using
-  if (held) {
 
-    if (command.primaryPressed) { // currently hardcoded that left click is semi
-                                  // auto
-      held->use(state, playerIndex, UseType::Primary);
-    }
-    if (command.secondaryHeld) { // and right click is auto
-      held->use(state, playerIndex, UseType::Secondary);
+  // Only run the use() functions if we are the server (authorative)
+  if (state.authorative == true) { 
+    // item using
+    if (held) {
+    
+      if (command.primaryPressed) { // currently hardcoded that left click is semi
+	// auto
+	held->use(state, playerIndex, UseType::Primary);
+      }
+      if (command.secondaryHeld) { // and right click is auto
+	held->use(state, playerIndex, UseType::Secondary);
+      }
     }
   }
 
@@ -116,10 +120,10 @@ void processPlayerInput(GameState &state, int playerIndex,
 
     glm::vec3 flatFront = computeFlatMoveDirection(command);
     glm::vec3 flatRight =
-        glm::normalize(glm::cross(flatFront, glm::vec3(0, 1, 0)));
+      glm::normalize(glm::cross(flatFront, glm::vec3(0, 1, 0)));
 
     glm::vec3 moveDir =
-        glm::vec3(0.0f); // a vector of our movement input (will be normalized)
+      glm::vec3(0.0f); // a vector of our movement input (will be normalized)
 
     if (command.moveForward) {
       moveDir += flatFront;
@@ -155,10 +159,10 @@ void processPlayerInput(GameState &state, int playerIndex,
 
     glm::vec3 flatFront = computeFlatMoveDirection(command);
     glm::vec3 flatRight = glm::normalize(glm::cross(
-        flatFront, glm::vec3(0, 1, 0))); // get flatRight from cross product
+						    flatFront, glm::vec3(0, 1, 0))); // get flatRight from cross product
 
     glm::vec3 moveDir =
-        glm::vec3(0.0f); // a vector of our movement input (will be normalized)
+      glm::vec3(0.0f); // a vector of our movement input (will be normalized)
 
     if (command.moveForward) {
       moveDir += flatFront;
@@ -182,16 +186,16 @@ void processPlayerInput(GameState &state, int playerIndex,
 
     if (command.jump && player.grounded) {
       player.velocity.y =
-          player.jumpStrength +
-          glm::length(glm::vec3(player.velocity.x, 0.0f, player.velocity.z)) /
-              3;
+        player.jumpStrength +
+        glm::length(glm::vec3(player.velocity.x, 0.0f, player.velocity.z)) /
+        3;
       player.sliding = false;
     }
 
   } else { // dont do applyMovementInput if we're dashing
     applyMovementInput(player, command,
                        deltaTime); // then movement/collision after we do items
-                                   // (which may modify movement/collision)
+    // (which may modify movement/collision)
   }
 
   player.velocity.y += player.gravity * deltaTime;
@@ -200,9 +204,9 @@ void processPlayerInput(GameState &state, int playerIndex,
 
 void resetPlayerStats(PlayerState &player) {
   player.moveSpeed =
-      player
+    player
           .baseMoveSpeed; // reset the stats (so items can update them below, or
-                          // if nothing changes them they're back at defaults)
+  // if nothing changes them they're back at defaults)
   player.jumpStrength = player.baseJumpStrength;
   player.gravity = player.baseGravity;
   player.groundAccel = player.baseGroundAccel;
@@ -226,9 +230,9 @@ void updateWorld(GameState &state, const std::vector<glm::vec3> &spawns,
 
   state.worldEntities
       .erase( // move all nullptrs to end, then remove that end chunk
-          std::remove(state.worldEntities.begin(), state.worldEntities.end(),
-                      nullptr),
-          state.worldEntities.end());
+             std::remove(state.worldEntities.begin(), state.worldEntities.end(),
+			 nullptr),
+             state.worldEntities.end());
 
   updateRound(state, spawns, deltaTime);
 }
@@ -236,8 +240,8 @@ void updateWorld(GameState &state, const std::vector<glm::vec3> &spawns,
 // static means 'internal linkage' which means it is only given/seen by this
 // file (its internal)
 static AABB getPlayerAABB(
-    const PlayerState &player) { // calculate the players AABB collision,
-                                 // relative to world coords
+			  const PlayerState &player) { // calculate the players AABB collision,
+  // relative to world coords
   AABB box;
   box.min = player.position + glm::vec3(-0.3f, 0.0f, -0.3f);
   box.max = player.position + glm::vec3(0.3f, 1.8f, 0.3f);
@@ -250,14 +254,14 @@ static void applyMovementInput(PlayerState &player, const InputCommand &command,
                                float deltaTime) {
 
   glm::vec3 flatFront =
-      command.lookDirection; // flatfront is forward dir WITHOUT up/down tilt
+    command.lookDirection; // flatfront is forward dir WITHOUT up/down tilt
   flatFront.y = 0.0f;        // remove like up/down tilt
   flatFront = glm::normalize(flatFront);
   glm::vec3 flatRight = glm::normalize(glm::cross(
-      flatFront, glm::vec3(0, 1, 0))); // get flatRight from cross product
+						  flatFront, glm::vec3(0, 1, 0))); // get flatRight from cross product
 
   glm::vec3 moveDir =
-      glm::vec3(0.0f); // a vector of our movement input (will be normalized)
+    glm::vec3(0.0f); // a vector of our movement input (will be normalized)
 
   if (!player.frozen) { // only do input if player is not frozen
     if (command.moveForward) {
@@ -283,9 +287,9 @@ static void applyMovementInput(PlayerState &player, const InputCommand &command,
 
   // how fast we reach that target
   float accel = player.grounded
-                    ? player.groundAccel
-                    : player.airAccel; // if grounded, accell = groundedAccell,
-                                       // else accel = airAccel
+                ? player.groundAccel
+                : player.airAccel; // if grounded, accell = groundedAccell,
+  // else accel = airAccel
   float t = accel * deltaTime;
   if (t > 1.0f) { // clamp it to 1.0
     t = 1.0f;     // how far towards target we move this frame
@@ -304,8 +308,8 @@ static void resolvePlayerCollisions(PlayerState &player,
                                     const std::vector<AABB> &colliders,
                                     float deltaTime) {
   player.grounded = resolveAABBCollision(
-      player.position, player.velocity, glm::vec3(-0.3f, 0.0f, -0.3f),
-      glm::vec3(0.3, 1.8f, 0.3f), colliders, deltaTime);
+					 player.position, player.velocity, glm::vec3(-0.3f, 0.0f, -0.3f),
+					 glm::vec3(0.3, 1.8f, 0.3f), colliders, deltaTime);
   // that call does everything for us and returns grounded
 }
 
@@ -332,9 +336,9 @@ bool resolveAABBCollision(glm::vec3 &position, glm::vec3 &velocity,
 
     // get the collder centres to decide the push direction
     glm::vec3 boxCentre =
-        (box.min + box.max) * 0.5f; // get our players AABB box centre
+      (box.min + box.max) * 0.5f; // get our players AABB box centre
     glm::vec3 cCentre =
-        (c.min + c.max) * 0.5f; // get the colliders AABB box centre
+      (c.min + c.max) * 0.5f; // get the colliders AABB box centre
 
     if (px < py && px < pz) {        // if x is the shallowest penetration
       if (boxCentre.x < cCentre.x) { // player is on -X side
@@ -380,19 +384,18 @@ static void resetRound(GameState &state, const std::vector<glm::vec3> spawns) {
 static void updateRound(GameState &state, const std::vector<glm::vec3> &spawns,
                         float deltaTime) {
   if (state.phase == RoundPhase::Active) { // is match is ongoing
-
     int winner = -1;
 
     for (int i = 0; i < state.players.size(); i++) {
       if (state.players[i].health <= 0) {
         if (winner != -1) { // if both have died at same time (in the same tick,
-                            // winner has already been set means both died)
+          // winner has already been set means both died)
           winner = 2;
         } else {
           winner =
-              (i == 0)
-                  ? 1
-                  : 0; // if this player (i) is 1, winner is 0 and vice versa
+            (i == 0)
+            ? 1
+            : 0; // if this player (i) is 1, winner is 0 and vice versa
         }
       }
     }
@@ -407,43 +410,43 @@ static void updateRound(GameState &state, const std::vector<glm::vec3> &spawns,
       state.roundWins[winner] += 1;
     }
     std::cout << "score is: " << state.roundWins[0] << " - "
-              << state.roundWins[1] << "\n";
+    << state.roundWins[1] << "\n";
 
     int a = state.roundWins[0];
     int b = state.roundWins[1];
 
-    // see who wins (or has nobody won:)
+    // see who wins (or has nobody won):
     if (a >= 7 && a - b >= 2) {
       state.matchWinner = 0;
       state.phase = RoundPhase::MatchOver;
       std::cout << "MATCH OVER with score: " << state.roundWins[0] << " - "
-                << state.roundWins[1] << " and winner: " << state.matchWinner
-                << "\n";
+      << state.roundWins[1] << " and winner: " << state.matchWinner
+      << "\n";
     } else if (b >= 7 && b - a >= 2) {
       state.matchWinner = 1;
       state.phase = RoundPhase::MatchOver;
       std::cout << "MATCH OVER with score: " << state.roundWins[0] << " - "
-                << state.roundWins[1] << " and winner: " << state.matchWinner
-                << "\n";
+      << state.roundWins[1] << " and winner: " << state.matchWinner
+      << "\n";
     } else if ((a + b) >= 20) { // cap reached
       if (a > b) {
         state.matchWinner = 0;
         state.phase = RoundPhase::MatchOver;
         std::cout << "MATCH OVER with score: " << state.roundWins[0] << " - "
-                  << state.roundWins[1] << " and winner: " << state.matchWinner
-                  << "\n";
+        << state.roundWins[1] << " and winner: " << state.matchWinner
+        << "\n";
       } else if (b > a) {
         state.matchWinner = 1;
         state.phase = RoundPhase::MatchOver;
         std::cout << "MATCH OVER with score: " << state.roundWins[0] << " - "
-                  << state.roundWins[1] << " and winner: " << state.matchWinner
-                  << "\n";
+        << state.roundWins[1] << " and winner: " << state.matchWinner
+        << "\n";
       } else {
         state.matchWinner = -1;
         state.phase = RoundPhase::MatchOver;
         std::cout << "MATCH OVER with score: " << state.roundWins[0] << " - "
-                  << state.roundWins[1] << " and winner: " << state.matchWinner
-                  << "\n";
+        << state.roundWins[1] << " and winner: " << state.matchWinner
+        << "\n";
       }
     } else {
       state.phase = RoundPhase::RoundOver;
@@ -460,13 +463,14 @@ static void updateRound(GameState &state, const std::vector<glm::vec3> &spawns,
   }
 
   else if (state.phase == RoundPhase::MatchOver) {
+    // we need to put the game into the 'Transition' phase and send disconnect clients and send them back to lobby
     // nothing yet
   }
 }
 
 static glm::vec3 computeFlatMoveDirection(const InputCommand &command) {
   glm::vec3 flatFront =
-      command.lookDirection; // flatfront is forward dir WITHOUT up/down tilt
+    command.lookDirection; // flatfront is forward dir WITHOUT up/down tilt
   flatFront.y = 0.0f;        // remove like up/down tilt
   flatFront = glm::normalize(flatFront);
 

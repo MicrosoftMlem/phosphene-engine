@@ -16,6 +16,8 @@ struct PlayerSnapshot {
   int dashCharges;
   bool grounded;
   bool sliding;
+  int weaponItem;
+  int abilityItem;
 };
 
 struct EntitySnapshot {
@@ -26,6 +28,7 @@ struct EntitySnapshot {
   bool isAmber;
 };
 
+// TODO - add players items to snapshot
 struct Snapshot {
   unsigned int tick; // for reconciliation
   int playerCount;
@@ -45,7 +48,7 @@ enum class MessageType : unsigned char { // bytes that every packet starts with
 struct WelcomeMessage { // when a client connects
   int playerIndex;
   // int so that its a fixed size.
-  //Indexes a level enum
+  // Indexes a level enum
   int currentLevelIndex;
 };
 

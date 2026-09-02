@@ -2,7 +2,10 @@
 .cache/
 build/
 *~
+*#
+#*
 vendor/
+Research.md
 
 # vendor is now not included, it should be deleted from github repo as
 soon as dependancy/build instructions are written in readme.md
