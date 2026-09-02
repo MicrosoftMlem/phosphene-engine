@@ -6,12 +6,14 @@
 #include "Simulation.h"
 #include "Snapshot.h"
 #include "TrafficLightEntity.h"
+#include "gameLevels.h"
 #include <chrono>
 #include <cstring>
 #include <deque>
 #include <enet/enet.h>
 #include <iostream>
 #include <thread>
+#include <cstdlib>
 
 void runServer() {
 
@@ -26,9 +28,19 @@ void runServer() {
   }
   std::cout << "Server listening on port 7777\n";
 
+  //how many levels are in the game
+  int gameLevelsCount;
+  gameLevelsCount = levelList.size();
+  
+  // when doing rand() % n, it will be from 0 to n - 1. because size() is the
+  // count of how many levels, 1 level will return 1, even though its index 0.
+  // So gameLevelsCount is 1 too high to index from, and rand() % n wants 1 more
+  // than the highest value, so it all works well.
+  int randomLevelIndex = rand() % gameLevelsCount;
+  std::string levelPath = levelList[randomLevelIndex];
+  
   GameState gameState;
-  // ISSUE level is hardcoded in server
-  Level level = loadLevel("test1v1level.level.json", nullptr, nullptr);
+  Level level = loadLevel(levelPath, nullptr, nullptr);
 
   PlayerState player0;
   PlayerState player1;
@@ -81,6 +93,7 @@ void runServer() {
                                   // (welcome = 1)
         WelcomeMessage welcome;
         welcome.playerIndex = playerIndex;
+        welcome.currentLevelIndex = randomLevelIndex;
         memcpy(buffer + 1, &welcome, sizeof(WelcomeMessage));
 
         ENetPacket *packet = enet_packet_create(

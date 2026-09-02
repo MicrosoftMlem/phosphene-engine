@@ -132,6 +132,7 @@ void PlayingState::update(float deltaTime) {
 
       gameState.roundWins[0] = snap.roundWins[0];
       gameState.roundWins[1] = snap.roundWins[1];
+      gameState.phase = (RoundPhase)snap.phase;
 
       // after the replay, see how wrong were we:
       glm::vec3 error = predictedPosition - gameState.players[myIndex].position;

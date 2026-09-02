@@ -34,3 +34,15 @@ between state swaps.
 *** TODO Plan the round win phase
 *** TODO Plan the match win phase
 *** TODO Fix WorldEntity class so we can access the inheriting classes methods (Server.cpp:216)
+
+** Fixes:
+
+The numerical code at the end is for my own reference for personal documentation
+
+- Updated default player health const to 120 to match ui and round health - 14.5
+- Made client read snap.phase after match end  - 14.1
+- Removed connectToServer call in main, as StateManager handles that already - 14.7
+- Updated GameState.h's dashCharges from 3 to 2 to match Simulation. - 14.6
+- Made server tell client what level to load, and added gameLevels.h which
+  keeps a vector of level paths. Server.cpp picks a level randomly,
+  and sends that level to clients through the welcome packet. - 14.3
