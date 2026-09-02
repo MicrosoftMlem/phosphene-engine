@@ -23,6 +23,8 @@ AABB GameObject::getAABB() {
 }
 
 void GameObject::draw(Shader &shader) {
+  shader.use();
+
   glm::mat4 model = glm::mat4(1.0f);       // identity
   model = glm::translate(model, position); // move it to its position
   model = glm::scale(model, size);         // scale it to its size
@@ -46,6 +48,9 @@ void GameObject::draw(Shader &shader) {
               material.textureScale.y); // set it to the materials textureScale
 
   glUniform1i(glGetUniformLocation(shader.ID, "u_UseEmissive"), 0); // 0 = false
+
+  glUniform1i(glGetUniformLocation(shader.ID, "u_AlbedoMap"), 0);
+  // point it to slot 0
 
   mesh->draw(); // tell the mesh to draw '->' for same reason as comment at top
 }

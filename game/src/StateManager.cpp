@@ -36,6 +36,7 @@ void StateManager::requestMatch(const char* host, int port) {
     pendingPort = port;
 }
 
+// Transitions between states. Run in StateManager::update
 void StateManager::performTransition() {
     if (pending == Pending::None) return; //no action to be done
 

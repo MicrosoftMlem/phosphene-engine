@@ -22,6 +22,7 @@
 #include <iostream>
 
 // this is the entire game state of the actual game
+// i think this is the client side state, I should check
 
 PlayingState::PlayingState(
     GLFWwindow *window,
@@ -69,6 +70,7 @@ PlayingState::PlayingState(
 void PlayingState::update(float deltaTime) {
   uiTime += deltaTime;
 
+  
   network.poll((float)glfwGetTime());
 
   int myIndex = network.getPlayerIndex();

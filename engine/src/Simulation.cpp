@@ -11,6 +11,7 @@
 
 // simulate() cant see the funcs below it in the file so we forward-declare them
 // here: an alternative would be to move these funcs to the top
+// a better alternative would be to make a header file lowk
 static AABB getPlayerAABB(const PlayerState &player);
 static void applyMovementInput(PlayerState &player, const InputCommand &command,
                                float deltaTime);

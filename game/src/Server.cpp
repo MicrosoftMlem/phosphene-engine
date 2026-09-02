@@ -14,11 +14,12 @@
 #include <thread>
 
 void runServer() {
+
   ENetAddress myAddress;
   myAddress.host = ENET_HOST_ANY; // listen on all network interfaces
   myAddress.port = 7777;
   ENetHost *server =
-      enet_host_create(&myAddress, 32, 2, 0, 0); // up to 32 peers, 2 channels
+    enet_host_create(&myAddress, 32, 2, 0, 0); // up to 32 peers, 2 channels
   if (server == nullptr) {
     std::cout << "ENet failed to create host\n";
     return;
@@ -26,10 +27,12 @@ void runServer() {
   std::cout << "Server listening on port 7777\n";
 
   GameState gameState;
+  // ISSUE level is hardcoded in server
   Level level = loadLevel("test1v1level.level.json", nullptr, nullptr);
 
   PlayerState player0;
   PlayerState player1;
+  // ISSUE randomise spawns
   if (level.spawns.size() >= 2) {
     player0.position = level.spawns[0];
     player1.position = level.spawns[1];
@@ -130,7 +133,8 @@ void runServer() {
       }
     }
 
-    // simulate one tick
+    // SIMULATE one tick
+    
     gameState.colliders.clear();
     for (GameObject &obj : level.objects) {
       if (obj.collidable) {
@@ -138,12 +142,14 @@ void runServer() {
       }
     }
 
+    //reset stats as active ones will be set again on this tick
     for (PlayerState &p : gameState.players) {
       resetPlayerStats(p);
     }
 
     updateWorld(gameState, level.spawns, tickRate);
 
+    //evaluate if round has just become active from RoundOver
     if (previousPhase == RoundPhase::RoundOver &&
         gameState.phase == RoundPhase::Active) {
       giveRoundItems(gameState.players[0]);
@@ -204,6 +210,10 @@ void runServer() {
       if (snapshot.entityCount >= 16)
         break; // dont go over the limit
 
+      // ISSUE - why are we hardcoding the rot and colour states into the
+      // snapshot
+      // Its because 'entity' is a worldEntity, and doesnt have the
+      // TrafficLightEntities 'getRotationY' methods etc
       EntitySnapshot &e = snapshot.entities[snapshot.entityCount];
       e.type = (int)entity->getType();
       e.position = entity->position;
@@ -211,6 +221,7 @@ void runServer() {
       e.isRed = false;
       e.isAmber = false;
 
+      // ISSUE - its hardcoded how it simulates each entity. they should have a method
       if (entity->getType() == EntityType::TrafficLight) {
         TrafficLightEntity *tl = static_cast<TrafficLightEntity *>(entity);
         e.rotationY = tl->getRotationY();
@@ -231,14 +242,15 @@ void runServer() {
 
     // debug output:
     tickCounter++;
-    if (tickCounter % 60 == 0) {
+    // we do AND 1 == 0 to stop debug output. hardcoded
+    if (tickCounter % 60 == 0 && 1 == 0) {
       std::cout << "x: " << gameState.players[0].position.x
                 << "  y: " << gameState.players[0].position.y
                 << "  z: " << gameState.players[0].position.z
                 << "  grounded: " << gameState.players[0].grounded << "\n";
     }
 
-    // sleep
+    // sleep so we stay at 60Hz
     std::this_thread::sleep_until(nextTick);
   }
 
