@@ -5,6 +5,8 @@ document.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-02
+
 ### Fixed
 - GameState player health const incorrectly defaulted to 100 instead
   of 120 #14.5
