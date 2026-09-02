@@ -1,9 +1,11 @@
-# [Changelog]
+# Changelog
 
 The #xx.n tags at the end of each change refer to a private TODO
 document.
 
 ## [Unreleased]
+
+_Nothing yet._
 
 ## [0.2.1] - 2026-09-02
 
