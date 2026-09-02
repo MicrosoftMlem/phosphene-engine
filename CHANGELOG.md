@@ -5,6 +5,10 @@ document.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.2.2] - 2026-09-02
+
 ### Changed
 - Players have the weapon slot equipped automatically at start of
   round now
