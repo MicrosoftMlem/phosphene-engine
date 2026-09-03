@@ -24,9 +24,39 @@ between state swaps.
 
 ** Current notes:
 
-Simulation.cpp handles deciding game phase changes.
-I have added new 'Transition' phase which should trigger when
-waiting for other player to load in, and when game ends
+GameObject.cpp/h currently correctly uses material class.
+Im looking for any places that don't use material class but should.
+GameObject.draw() now uses stored Shader in material instead of arg
+
+Added textureStore.cpp/h which registers textures on init and has the
+getTexture method.
+
+No classes should have a Texture member now as they should pull from
+the textureStore.
+
+levelMaterial.texture is used in PlayingState.cpp (replacing Texture
+texture)
+
+However, while levelMaterial.shader is used, it seg faults. We do
+levelMaterial.shader = &tempShader which is in the member
+initialisation. We need to replace that with a shaderStore at some
+point.
+
+GameObject.cpp has both a material, and takes a shader as an arg. I am
+removing that shader arg as the segfault could be caused by it
+somehow.
+
+Level.cpp has a material, but never asks for or sets the materials
+shader so it just stays as a nullptr. this is the likely cause of the
+segfault. i am making it so you must supply a shader when running
+loadLevel.
+
+Server gives loadLevel nullptrs for the mesh, texture args.
+However loadlevel doesnt seem to handle this? I havent tested yet but
+ive added a nullptr for the new shader arg, but im assuming it will
+crash.
+
+There is now a shaderStore that PlayingState now uses
 
 ** TODOS:
 

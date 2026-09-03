@@ -8,15 +8,16 @@
 
 class GameObject {
 public:
-    glm::vec3 position;
-    glm::vec3 size; //width/height/depth
-    Mesh* mesh; //pointer bc then gameobjects of same mesh can share for optimisation
-    Material material;
+  glm::vec3 position;
+  glm::vec3 size; //width/height/depth
+  Mesh* mesh; //pointer bc then gameobjects of same mesh can share for optimisation
+  Material material;
 
-    bool collidable = true;
+  bool collidable = true;
 
-    GameObject(Mesh* mesh, Material material, glm::vec3 position, glm::vec3 size);
+  GameObject(Mesh* mesh, Material material, glm::vec3 position, glm::vec3 size);
 
-    AABB getAABB();
-    void draw(Shader& shader);
+  AABB getAABB();
+  void draw();
+  //    void draw(Shader& shader);
 };

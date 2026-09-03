@@ -5,7 +5,17 @@ document.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Changed
+- GameObjects now draw from their stored shader in their material,
+  rather than from a shader arg in their draw call.
+- PlayingState now uses a levelMaterial Material for its level shaders
+  and textures.
+
+### Added
+- New textureStore file contains a centralised cache of textures, and
+  provides a method to request and retrieve the pointer to a texture.
+- New shaderStore file contains a centralised cache of shaders, and
+  provides a method to request and retrieve the pointer to a shader.
 
 ## [0.2.2] - 2026-09-02
 

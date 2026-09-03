@@ -16,6 +16,8 @@
 #include "Texture.h"
 #include "TrafficLight.h"
 #include "TrafficLightEntity.h"
+#include "textureStore.h"
+#include "shaderStore.h"
 #include "glm/glm.hpp"
 #include <cstdlib>
 #include <glm/gtc/type_ptr.hpp>
@@ -29,8 +31,7 @@ PlayingState::PlayingState(
 			   NetworkClient &networkRef) // this first part is the member initialisation
 // list. it specifies HOW to construct members
 // before the constructor is run
-: shader("basic.vert", "basic.frag"), texture("checker.png"),
-  cubeMesh(computeNormals(Primitive::rawCubeVertices)),
+: cubeMesh(computeNormals(Primitive::rawCubeVertices)),
   activeCamera(glm::vec3(0.0f, 0.0f, 3.0f)),
   testMesh(loadOBJ("sphere.obj")),
   trafficLightMesh(loadOBJ("NewTrafficLightEntity.obj")),
@@ -42,8 +43,17 @@ PlayingState::PlayingState(
   this->window = window;
   glfwSetWindowUserPointer(window, &activeCamera);
 
-  level = loadLevel("test1v1level.level.json", &cubeMesh, &texture);
+  // first set the levelMaterial for level geometry
+  levelMaterial.texture = getTexture("checkerTex");
 
+  //then set the shader material for level geometry
+  levelMaterial.shader = getShader("basicShader");
+  
+  //then load the level with that texture
+  level = loadLevel("test1v1level.level.json", &cubeMesh, levelMaterial.texture, levelMaterial.shader);
+
+  
+  
   if (!level.lights.empty()) {
     worldLightPos =
       level.lights[0]; // set the light pos to the first light in the level
@@ -284,32 +294,32 @@ void PlayingState::render() {
   //  far clip plane 100.0f (further than this isnt drawn)
 
   // NOTE: ACTIVATE THE SHADER EARLY(so that setting uniforms always affects it)
-  shader.use();
+  levelMaterial.shader->use();
 
-  int viewLoc = glGetUniformLocation(shader.ID, "view");
-  int projLoc = glGetUniformLocation(shader.ID, "projection");
+  int viewLoc = glGetUniformLocation(levelMaterial.shader->ID, "view");
+  int projLoc = glGetUniformLocation(levelMaterial.shader->ID, "projection");
   glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
   glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-  int lightPosLoc = glGetUniformLocation(shader.ID, "lightPos");
-  int lightColorLoc = glGetUniformLocation(shader.ID, "lightColor");
-  int viewPosLoc = glGetUniformLocation(shader.ID, "viewPos");
+  int lightPosLoc = glGetUniformLocation(levelMaterial.shader->ID, "lightPos");
+  int lightColorLoc = glGetUniformLocation(levelMaterial.shader->ID, "lightColor");
+  int viewPosLoc = glGetUniformLocation(levelMaterial.shader->ID, "viewPos");
   glUniform3f(lightPosLoc, worldLightPos.x, worldLightPos.y, worldLightPos.z);
   glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f); // white light
   glUniform3f(viewPosLoc, activeCamera.position.x, activeCamera.position.y,
               activeCamera.position.z);
 
   // default emissive to false;
-  glUniform1i(glGetUniformLocation(shader.ID, "u_UseEmissive"), 0);
+  glUniform1i(glGetUniformLocation(levelMaterial.shader->ID, "u_UseEmissive"), 0);
   // dont use emissive on gameObjects (level geometry)
-  glUniform1i(glGetUniformLocation(shader.ID, "u_AlbedoMap"), 0);
+  glUniform1i(glGetUniformLocation(levelMaterial.shader->ID, "u_AlbedoMap"), 0);
   // point it to slot 0
 
   // all gameObjects use this shader so rn its fine to just .use() before the
   // loop
 
   for (GameObject &obj : level.objects) { // for each gameobject in the level
-    obj.draw(shader);
+    obj.draw();
   }
 
   if (network.hasSnapshot()) {
@@ -334,37 +344,37 @@ void PlayingState::render() {
         glm::mat4 model = glm::translate(glm::mat4(1.0f), e.position);
         model = glm::rotate(model, e.rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
 
-        glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1,
+        glUniformMatrix4fv(glGetUniformLocation(levelMaterial.shader->ID, "model"), 1,
                            GL_FALSE, glm::value_ptr(model));
 
         // ALBEDO:
         // read notes below (on TEXTURE1)
         trafficLightAlbedo.bind(0);
         // read albedo from slot 0
-        glUniform1i(glGetUniformLocation(shader.ID, "u_AlbedoMap"), 0);
+        glUniform1i(glGetUniformLocation(levelMaterial.shader->ID, "u_AlbedoMap"), 0);
 
         // EMISSIVE:
         trafficLightEmissive.bind(1); // bind the emissive texture (into slot 1)
         // tell the shader uniform 'u_EmissiveMap' to read from slot 1
-        glUniform1i(glGetUniformLocation(shader.ID, "u_EmissiveMap"), 1);
+        glUniform1i(glGetUniformLocation(levelMaterial.shader->ID, "u_EmissiveMap"), 1);
 
-        glUniform1i(glGetUniformLocation(shader.ID, "u_UseEmissive"), 1);
+        glUniform1i(glGetUniformLocation(levelMaterial.shader->ID, "u_UseEmissive"), 1);
         // 1 bc 1 = true
 
         // set light to red:
-        glUniform3f(glGetUniformLocation(shader.ID, "u_ActiveState"),
+        glUniform3f(glGetUniformLocation(levelMaterial.shader->ID, "u_ActiveState"),
                     activeState.r, activeState.g, activeState.b);
-        glUniform1f(glGetUniformLocation(shader.ID, "u_BloomIntensity"), 5.0f);
+        glUniform1f(glGetUniformLocation(levelMaterial.shader->ID, "u_BloomIntensity"), 5.0f);
 
-        glUniform3f(glGetUniformLocation(shader.ID, "tint"), 1.0f, 1.0f, 1.0f);
-        glUniform2f(glGetUniformLocation(shader.ID, "textureScale"), 1.0f,
+        glUniform3f(glGetUniformLocation(levelMaterial.shader->ID, "tint"), 1.0f, 1.0f, 1.0f);
+        glUniform2f(glGetUniformLocation(levelMaterial.shader->ID, "textureScale"), 1.0f,
                     1.0f);
 
         trafficLightMesh.draw();
 
         // reset emissive toggle and binded slot so it doesnt affect later
         // things:
-        glUniform1i(glGetUniformLocation(shader.ID, "u_UseEmissive"), 0);
+        glUniform1i(glGetUniformLocation(levelMaterial.shader->ID, "u_UseEmissive"), 0);
         glActiveTexture(GL_TEXTURE0);
       }
     }
@@ -395,14 +405,14 @@ void PlayingState::render() {
 		       model,
 		       glm::vec3(0.6f, 1.8f, 0.6f)); // scale the cube to the players size
 
-    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE,
+    glUniformMatrix4fv(glGetUniformLocation(levelMaterial.shader->ID, "model"), 1, GL_FALSE,
                        glm::value_ptr(model));
 
     playerTexture.bind();
-    glUniform3f(glGetUniformLocation(shader.ID, "tint"), 1.0f, 1.0f, 1.0f);
-    glUniform2f(glGetUniformLocation(shader.ID, "textureScale"), 0.1f, 0.1f);
+    glUniform3f(glGetUniformLocation(levelMaterial.shader->ID, "tint"), 1.0f, 1.0f, 1.0f);
+    glUniform2f(glGetUniformLocation(levelMaterial.shader->ID, "textureScale"), 0.1f, 0.1f);
 
-    glUniform1i(glGetUniformLocation(shader.ID, "u_UseEmissive"),
+    glUniform1i(glGetUniformLocation(levelMaterial.shader->ID, "u_UseEmissive"),
                 0); // 0 = false
 
     cubeMesh.draw();

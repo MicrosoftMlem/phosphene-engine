@@ -13,4 +13,4 @@ struct Level {
     std::vector<glm::vec3> lights;
 };
 
-Level loadLevel(const std::string& path, Mesh* mesh, Texture* texture);
+Level loadLevel(const std::string& path, Mesh* mesh, Texture* texture, Shader* shader);

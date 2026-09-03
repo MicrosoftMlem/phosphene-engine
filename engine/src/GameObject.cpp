@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <iostream>
 
 GameObject::GameObject(Mesh *mesh, Material material, glm::vec3 position,
                        glm::vec3 size) {
@@ -12,6 +13,10 @@ GameObject::GameObject(Mesh *mesh, Material material, glm::vec3 position,
   this->position = position;
   this->size = size;
   this->material = material;
+
+  if (this->material.shader == nullptr) {
+    std::cerr << "Material shader is null for GameObject\n";
+  }
 }
 
 AABB GameObject::getAABB() {
@@ -22,15 +27,18 @@ AABB GameObject::getAABB() {
   return box;
 }
 
-void GameObject::draw(Shader &shader) {
-  shader.use();
+void GameObject::draw() {
+  Shader *matShader = material.shader;
+  // shader.use();
+  matShader->use();
+  
 
   glm::mat4 model = glm::mat4(1.0f);       // identity
   model = glm::translate(model, position); // move it to its position
   model = glm::scale(model, size);         // scale it to its size
 
   int modelLoc =
-      glGetUniformLocation(shader.ID, "model"); // get the shader model uniform
+      glGetUniformLocation(matShader->ID, "model"); // get the shader model uniform
   glUniformMatrix4fv(
       modelLoc, 1, GL_FALSE,
       glm::value_ptr(model)); // store the model matrix in the uniform
@@ -39,17 +47,17 @@ void GameObject::draw(Shader &shader) {
     material.texture->bind(0); // bind the texture
   }
 
-  int tintLoc = glGetUniformLocation(shader.ID, "tint");
+  int tintLoc = glGetUniformLocation(matShader->ID, "tint");
   glUniform3f(tintLoc, material.tint.r, material.tint.g, material.tint.b);
 
   int scaleLoc = glGetUniformLocation(
-      shader.ID, "textureScale"); // get the texture scale uniform
+      matShader->ID, "textureScale"); // get the texture scale uniform
   glUniform2f(scaleLoc, material.textureScale.x,
               material.textureScale.y); // set it to the materials textureScale
 
-  glUniform1i(glGetUniformLocation(shader.ID, "u_UseEmissive"), 0); // 0 = false
+  glUniform1i(glGetUniformLocation(matShader->ID, "u_UseEmissive"), 0); // 0 = false
 
-  glUniform1i(glGetUniformLocation(shader.ID, "u_AlbedoMap"), 0);
+  glUniform1i(glGetUniformLocation(matShader->ID, "u_AlbedoMap"), 0);
   // point it to slot 0
 
   mesh->draw(); // tell the mesh to draw '->' for same reason as comment at top

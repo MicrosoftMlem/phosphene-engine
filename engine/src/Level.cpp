@@ -7,44 +7,55 @@
 using json = nlohmann::json; //alais the namespace (so saying 'json' is same as 'nlohmann::json')
 
 static glm::vec3 readVec3(const json& array) { //turns an array with 3 entries into a vector3
-    return glm::vec3(array[0], array[1], array[2]);
+  return glm::vec3(array[0], array[1], array[2]);
 }
 
-Level loadLevel(const std::string& path, Mesh* mesh, Texture* texture) {
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        std::cout << "Failed to open level: " << path << "\n";
-        return Level();
-    }
-    json data = json::parse(file);
+// ive made it so loadLevel takes a shader as a new arg bc otherwise its
+// materials shader was a nullptr
 
-    Level level;
+// ISSUE:
 
-    for (const auto& box : data["boxes"]) { //auto bc its a long nlohmann json type i dont wanna write
-        glm::vec3 min = readVec3(box["min"]); //get min
-        glm::vec3 max = readVec3(box["max"]); //get max
+// server gives loadLevel nullptrs for the mesh, texture and shader. It doesnt
+// have issues right now, but it doesnt behave any different with/without the
+// pointers filled in. So if the server ever for some reason tries to draw it
+// will crash. Should be fine since server doesnt draw.
 
-        glm::vec3 centre = (min + max) * 0.5f; //gets the centre of the box
-        glm::vec3 size = max - min;
-        glm::vec2 textureScale = glm::vec2(size.x, size.z) / 8.0f; //scale the texture to the size of the box
+Level loadLevel(const std::string& path, Mesh* mesh, Texture* texture, Shader* shader) {
+  std::ifstream file(path);
+  if (!file.is_open()) {
+    std::cout << "Failed to open level: " << path << "\n";
+    return Level();
+  }
+  json data = json::parse(file);
 
-        Material mat;
-        mat.texture = texture;
-        mat.textureScale = textureScale;
-        level.objects.push_back(GameObject(mesh, mat, centre, size));
-    }
+  Level level;
 
-    for (const auto& spawn : data["spawns"]) {
-        level.spawns.push_back(readVec3(spawn["pos"])); //just push back the pos
-    }
+  for (const auto& box : data["boxes"]) { //auto bc its a long nlohmann json type i dont wanna write
+    glm::vec3 min = readVec3(box["min"]); //get min
+    glm::vec3 max = readVec3(box["max"]); //get max
 
-    for (const auto& items : data["items"]) {
-        level.itemSpawns.push_back(readVec3(items["pos"])); //just push back the pos of items
-    }
+    glm::vec3 centre = (min + max) * 0.5f; //gets the centre of the box
+    glm::vec3 size = max - min;
+    glm::vec2 textureScale = glm::vec2(size.x, size.z) / 8.0f; //scale the texture to the size of the box
 
-    for (const auto& light : data["lights"]) {
-        level.lights.push_back(readVec3(light["pos"])); //just push back the pos of lights
-    }
+    Material mat;
+    mat.texture = texture;
+    mat.shader = shader;
+    mat.textureScale = textureScale;
+    level.objects.push_back(GameObject(mesh, mat, centre, size));
+  }
 
-    return level;
+  for (const auto& spawn : data["spawns"]) {
+    level.spawns.push_back(readVec3(spawn["pos"])); //just push back the pos
+  }
+
+  for (const auto& items : data["items"]) {
+    level.itemSpawns.push_back(readVec3(items["pos"])); //just push back the pos of items
+  }
+
+  for (const auto& light : data["lights"]) {
+    level.lights.push_back(readVec3(light["pos"])); //just push back the pos of lights
+  }
+
+  return level;
 }

@@ -23,6 +23,8 @@
 #include "Server.h"
 #include "NetworkClient.h"
 #include "StateManager.h"
+#include "textureStore.h"
+#include "shaderStore.h"
 
 /*
   when we are telling the gpu to do stuff we have 2 things:
@@ -121,6 +123,10 @@ int main(int argc, char** argv) {
   glEnable(GL_DEPTH_TEST); //enable depth testing
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //hides cursor and locks it so it wont come out window when doing camera moving w/ mouse
 
+  // Initialise the shader store:
+  initShaders();
+  // Initialise the texture store:
+  initTextures();
 
   StateManager states(window);
   states.requestMenu();

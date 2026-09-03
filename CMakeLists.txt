@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(phosphene_engine)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -31,7 +33,8 @@ target_link_libraries(engine PUBLIC glad) #engine needs glad
 # 'game' is an executable build from main.cpp
 add_executable(game game/src/main.cpp game/src/Pistol.cpp game/src/PlayingState.cpp game/src/ButterflyKnife.cpp
                game/src/TrafficLight.cpp game/src/TrafficLightEntity.cpp game/src/Server.cpp game/src/NetworkClient.cpp
-               game/src/RoundItems.cpp game/src/StateManager.cpp game/src/MenuState.cpp)
+               game/src/RoundItems.cpp game/src/StateManager.cpp game/src/MenuState.cpp game/src/textureStore.cpp 
+	       game/src/shaderStore.cpp)
 # connect the game to everything it needs
 target_link_libraries(game PRIVATE engine glfw OpenGL::GL glm::glm enet) #the game needs: glad (GL loader), Open::GL (the actual GL lib),
 # glm::glm (math)

@@ -3,6 +3,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+// this file needs a large refactor
+
 UIRenderer::UIRenderer() : shader("ui.vert", "ui.frag"), fireShader("ui.vert", "ui_fire.frag"), circleShader("ui.vert", "ui_circle.frag") { //stuff after colon is member initialiser list
     float vertices[] = { //a unit quad (2 triangles making a square)
         0.0f, 0.0f,

@@ -42,7 +42,7 @@ void runServer() {
   GameState gameState;
   // the server is authorative
   gameState.authorative = true;
-  Level level = loadLevel(levelPath, nullptr, nullptr);
+  Level level = loadLevel(levelPath, nullptr, nullptr, nullptr);
 
   PlayerState player0;
   PlayerState player1;
@@ -55,7 +55,7 @@ void runServer() {
   gameState.players.push_back(player1);
 
   //todo - at some point we need to randomise this
-  int playerWeaponInt = 1; // pistol
+  int playerWeaponInt = 0; // pistol
   int playerAbilityInt = 2; // traffic light
   
   giveRoundItems(gameState.players[0], playerWeaponInt, playerAbilityInt);

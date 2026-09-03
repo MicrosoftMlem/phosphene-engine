@@ -27,11 +27,13 @@ private:
   GameState gameState;
   Camera activeCamera;
   glm::vec3 worldLightPos;
-  Shader shader;
-  Texture texture;
   Texture playerTexture;
   Mesh cubeMesh;
-
+  // this should replace texture, shader
+  // it is setup in PlayingState.cpp
+  Material levelMaterial;
+  
+  
   Mesh testMesh;
   // TODO: all meshes need to be loaded in here. this should be moved into the
   // entity itself

@@ -4,8 +4,14 @@ build/
 *~
 *#
 #*
+*.cmake
+compile_commands.json
+CMakeCache.txt
+CMakeFiles/
 vendor/
 Research.md
+
+# I think make made lots of new files that might not be ignored
 
 # vendor is now not included, it should be deleted from github repo as
 soon as dependancy/build instructions are written in readme.md
