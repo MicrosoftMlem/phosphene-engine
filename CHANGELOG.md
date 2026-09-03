@@ -5,6 +5,10 @@ document.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.3.0] - 2026-09-03
+
 ### Changed
 - GameObjects now draw from their stored shader in their material,
   rather than from a shader arg in their draw call.
