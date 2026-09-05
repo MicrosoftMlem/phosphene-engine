@@ -5,7 +5,9 @@ document.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- New drawImage function in UIRenderer.
+- New width and height members in Texture class.
 
 ## [0.3.1] - 2026-09-05
 

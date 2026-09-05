@@ -24,34 +24,13 @@ between state swaps.
 
 ** Current notes:
 
-Snapshot.h now has frozen attribute
+Added drawImage to UIRenderer.
+Added width and height attributes to the Texture class.
 
-Server.cpp now fills in the frozen attribute
-
-PlayingState updates its own frozen attribute.
-
-Simulation.cpp seems to already implement the frozen logic, but player
-can still move.
-
-So far no change
-
-Simulation.cpp's resetStats, when made to not reset frozen it doesnt
-have the weird issue where player can wiggle when frozen, HOWEVER, the
-player doesnt get un-frozen after the traffic light goes off.
-
-
-
-Its because resetPlayerStats was called on both client and server. So
-client would get a snapshot telling it its frozen, but then it would
-reset its stats and predict, and the prediction never checked if it
-was frozen.
-
-Now only server resets frozen so that if the client wants to be
-unfrozen it has to wait for the server to tell it in a snapshot.
 
 ** TODOS:
-.
-*** TODO Implement a material class and refactor to use it
+
+*** TODO Implement a material class and refactor to use it. This is done to a good enough extent
 *** TODO Go over the UIRenderer class, and then expand it
 *** TODO Implement text in the UI
 *** TODO Implement IDE tool for going over 'ISSUE' comments

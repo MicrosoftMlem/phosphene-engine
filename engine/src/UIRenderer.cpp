@@ -1,11 +1,12 @@
 #include "UIRenderer.h"
+#include <string>
 #include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 // this file needs a large refactor
 
-UIRenderer::UIRenderer() : shader("ui.vert", "ui.frag"), fireShader("ui.vert", "ui_fire.frag"), circleShader("ui.vert", "ui_circle.frag") { //stuff after colon is member initialiser list
+UIRenderer::UIRenderer() : shader("ui.vert", "ui.frag"), fireShader("ui.vert", "ui_fire.frag"), circleShader("ui.vert", "ui_circle.frag"), textureShader("uiTexture.vert", "uiTexture.frag") { //stuff after colon is member initialiser list
     float vertices[] = { //a unit quad (2 triangles making a square)
         0.0f, 0.0f,
         1.0f, 0.0f,
@@ -83,6 +84,28 @@ void UIRenderer::drawCircle(float x, float y, float diameter, glm::vec4 color, i
     glUniformMatrix4fv(glGetUniformLocation(circleShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
     glUniformMatrix4fv(glGetUniformLocation(circleShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
     glUniform4f(glGetUniformLocation(circleShader.ID, "color"), color.r, color.g, color.b, color.a);
+
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+
+
+void UIRenderer::drawImage(float xPos, float yPos, float scale, Texture texture, int screenWidth, int screenHeight) {
+  textureShader.use();
+
+      glm::mat4 projection = glm::ortho(0.0f, (float)screenWidth, (float)screenHeight, 0.0f, -1.0f, 1.0f);
+
+      glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(xPos, yPos, 0.0f));
+    model = glm::scale(model, glm::vec3(texture.width * scale, texture.height * scale, 1.0f));
+
+    glUniformMatrix4fv(glGetUniformLocation(textureShader.ID, "projection"), 1,
+                       GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(textureShader.ID, "model"), 1,
+                       GL_FALSE, glm::value_ptr(model));
+  
+    texture.bind(0);
 
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
