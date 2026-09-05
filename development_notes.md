@@ -24,43 +24,33 @@ between state swaps.
 
 ** Current notes:
 
-GameObject.cpp/h currently correctly uses material class.
-Im looking for any places that don't use material class but should.
-GameObject.draw() now uses stored Shader in material instead of arg
+Snapshot.h now has frozen attribute
 
-Added textureStore.cpp/h which registers textures on init and has the
-getTexture method.
+Server.cpp now fills in the frozen attribute
 
-No classes should have a Texture member now as they should pull from
-the textureStore.
+PlayingState updates its own frozen attribute.
 
-levelMaterial.texture is used in PlayingState.cpp (replacing Texture
-texture)
+Simulation.cpp seems to already implement the frozen logic, but player
+can still move.
 
-However, while levelMaterial.shader is used, it seg faults. We do
-levelMaterial.shader = &tempShader which is in the member
-initialisation. We need to replace that with a shaderStore at some
-point.
+So far no change
 
-GameObject.cpp has both a material, and takes a shader as an arg. I am
-removing that shader arg as the segfault could be caused by it
-somehow.
+Simulation.cpp's resetStats, when made to not reset frozen it doesnt
+have the weird issue where player can wiggle when frozen, HOWEVER, the
+player doesnt get un-frozen after the traffic light goes off.
 
-Level.cpp has a material, but never asks for or sets the materials
-shader so it just stays as a nullptr. this is the likely cause of the
-segfault. i am making it so you must supply a shader when running
-loadLevel.
 
-Server gives loadLevel nullptrs for the mesh, texture args.
-However loadlevel doesnt seem to handle this? I havent tested yet but
-ive added a nullptr for the new shader arg, but im assuming it will
-crash.
 
-There is now a shaderStore that PlayingState now uses
+Its because resetPlayerStats was called on both client and server. So
+client would get a snapshot telling it its frozen, but then it would
+reset its stats and predict, and the prediction never checked if it
+was frozen.
+
+Now only server resets frozen so that if the client wants to be
+unfrozen it has to wait for the server to tell it in a snapshot.
 
 ** TODOS:
-
-*** TODO Make player 'freeze' effect, be also considered by the client.
+.
 *** TODO Implement a material class and refactor to use it
 *** TODO Go over the UIRenderer class, and then expand it
 *** TODO Implement text in the UI

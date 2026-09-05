@@ -114,6 +114,7 @@ void PlayingState::update(float deltaTime) {
            i++) {
         if (i == myIndex)
           continue;
+        
         gameState.players[i].position = snap.players[i].position;
         gameState.players[i].lookDirection = snap.players[i].lookDirection;
         gameState.players[i].health = snap.players[i].health;
@@ -145,6 +146,9 @@ void PlayingState::update(float deltaTime) {
       me.dashDirection = s.dashDirection;
       me.weaponInt = s.weaponItem;
       me.abilityInt = s.abilityItem;
+      me.frozen = s.frozen;
+
+      std::cout << "This is client. Am I frozen?: " << me.frozen << "\n";
 
       // then replay everything the server hasnt seen yet:
       for (unsigned int seq = s.lastAppliedSequence + 1;

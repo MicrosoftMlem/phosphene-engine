@@ -164,6 +164,11 @@ void runServer() {
     //reset stats as active ones will be set again on this tick
     for (PlayerState &p : gameState.players) {
       resetPlayerStats(p);
+
+      // we reset it outside, bc resetPlayerStats is called by both server and
+      // client, and we dont want client to reset its frozen state. It should
+      // recieve snapshots telling it if its frozen or not
+      p.frozen = false;
     }
 
     updateWorld(gameState, level.spawns, tickRate);
@@ -222,6 +227,7 @@ void runServer() {
       snapshot.players[i].sliding = gameState.players[i].sliding;
       snapshot.players[i].weaponItem = gameState.players[i].weaponInt;
       snapshot.players[i].abilityItem = gameState.players[i].abilityInt;
+      snapshot.players[i].frozen = gameState.players[i].frozen;
     }
     snapshot.roundWins[0] = gameState.roundWins[0];
     snapshot.roundWins[1] = gameState.roundWins[1];

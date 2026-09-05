@@ -183,8 +183,8 @@ void processPlayerInput(GameState &state, int playerIndex,
 
     player.velocity.x += moveDir.x * slideSteer * deltaTime;
     player.velocity.z += moveDir.z * slideSteer * deltaTime;
-
-    if (command.jump && player.grounded) {
+    
+    if (command.jump && player.grounded && !player.frozen) {
       player.velocity.y =
         player.jumpStrength +
         glm::length(glm::vec3(player.velocity.x, 0.0f, player.velocity.z)) /
@@ -193,6 +193,10 @@ void processPlayerInput(GameState &state, int playerIndex,
     }
 
   } else { // dont do applyMovementInput if we're dashing
+
+    // finally do movement input:
+
+    
     applyMovementInput(player, command,
                        deltaTime); // then movement/collision after we do items
     // (which may modify movement/collision)
@@ -211,7 +215,9 @@ void resetPlayerStats(PlayerState &player) {
   player.gravity = player.baseGravity;
   player.groundAccel = player.baseGroundAccel;
   player.airAccel = player.baseAirAccel;
-  player.frozen = false;
+  // frozen is not reset here. its reset in Server.cpp. Otherwise the
+  // client resets the state, and during prediction it never sets it back to
+  // frozen
 }
 
 void updateWorld(GameState &state, const std::vector<glm::vec3> &spawns,
@@ -263,6 +269,7 @@ static void applyMovementInput(PlayerState &player, const InputCommand &command,
   glm::vec3 moveDir =
     glm::vec3(0.0f); // a vector of our movement input (will be normalized)
 
+  
   if (!player.frozen) { // only do input if player is not frozen
     if (command.moveForward) {
       moveDir += flatFront;
@@ -284,6 +291,9 @@ static void applyMovementInput(PlayerState &player, const InputCommand &command,
 
   // where we want horizontal velocity to be
   glm::vec3 targetVel = moveDir * player.moveSpeed;
+  // if we are frozen, frozen = 1, so !frozen = 0
+  // ISSUE this doesnt affect anything for some reason?
+  targetVel *= !player.frozen;
 
   // how fast we reach that target
   float accel = player.grounded

@@ -16,6 +16,9 @@ struct PlayerSnapshot {
   int dashCharges;
   bool grounded;
   bool sliding;
+
+  bool frozen;
+  
   int weaponItem;
   int abilityItem;
 };
