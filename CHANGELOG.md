@@ -5,6 +5,10 @@ document.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.3.1] - 2026-09-05
+
 ### Fixed
 - Client reset its frozen state, and never evaluated if it was frozen
   in prediction. Now only server resets frozen and is authorative over
