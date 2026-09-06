@@ -24,11 +24,36 @@ between state swaps.
 
 ** Current notes:
 
-Added drawImage to UIRenderer.
-Added width and height attributes to the Texture class.
+Added AudioInstance class
+Added MiniAudio vendor
+Added FootstepSystem class
+
+AudioInstance class doesnt do much, but its controls initialistion of
+the ma_engine and will also later control destruction (havent
+implemented yet)
+
+it takes a list of PlayerStates and tracks their positions. then when
+you call update() on the class, it sees how far the players have moves
+and determines if to play footstep. currently it has 2 footstep sounds
+but doesnt pick randomly yet. it can vary pitch and volume but doesnt
+do random yet. it picsk footstep sound based on if the sound is
+already playing.
+
+PlayingState has a FootstepSystem member and calls update on it at the
+end of PlayingStates update, once player position is finalized.
+FootstepSystem doesnt take in player pos yet for directional audio.
+
+Currently game segfaults at PlayingState initialising its
+FootstepSystem:
+
+Failed to add footstep01.mp3 to FootstepSystem.
+./run.sh: line 3: 41058 Segmentation fault      ../../build/game
+
+This will probably be an easy fix.
 
 ** TODOS:
 
+** TODO create AudioInstance destructor
 *** TODO Implement a material class and refactor to use it. This is done to a good enough extent
 *** TODO Go over the UIRenderer class, and then expand it
 *** TODO Implement text in the UI

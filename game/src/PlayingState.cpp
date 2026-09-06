@@ -2,6 +2,7 @@
 #include "Bot.h"
 #include "ButterflyKnife.h"
 #include "Camera.h"
+#include "GameState.h"
 #include "InputCommand.h"
 #include "Level.h"
 #include "Material.h"
@@ -42,7 +43,7 @@ PlayingState::PlayingState(
 { // then this is the constructor
   this->window = window;
   glfwSetWindowUserPointer(window, &activeCamera);
-
+  
   // first set the levelMaterial for level geometry
   levelMaterial.texture = getTexture("checkerTex");
 
@@ -259,6 +260,10 @@ void PlayingState::update(float deltaTime) {
                     ? 85.0f
                     : 70.0f;
   currentFov = glm::mix(currentFov, targetFov, 8.0f * deltaTime);
+
+  // after position is finalized, we can play footsteps:
+
+  footstepSys.update(gameState.players, deltaTime);
 }
 
 void PlayingState::render() {

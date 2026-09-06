@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 
+// this class handles construction/destruction only rn (doesnt have desctruction yet)
+
 AudioInstance::AudioInstance() {
   ma_result result;
 
@@ -16,15 +18,3 @@ AudioInstance::AudioInstance() {
   std::cout << "AudioEngine init successfully.\n";
 }
 
-int AudioInstance::playAudio(std::string path) {
-  // assumes engine is initialised successfully
-
-  ma_result result = ma_engine_play_sound(&engine, path.c_str(), NULL);
-
-  if (result != MA_SUCCESS) {
-    std::cerr << "Failed to play sound at: " << path << "\n";
-    return -1;
-  }
-
-  return 0;
-}

@@ -9,6 +9,7 @@
 #include "Shader.h"
 #include "Texture.h"
 #include "UIRenderer.h"
+#include "FootstepSystem.h"
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -32,7 +33,8 @@ private:
   // this should replace texture, shader
   // it is setup in PlayingState.cpp
   Material levelMaterial;
-  
+
+  FootstepSystem footstepSys;
   
   Mesh testMesh;
   // TODO: all meshes need to be loaded in here. this should be moved into the

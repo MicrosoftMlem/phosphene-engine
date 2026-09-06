@@ -32,7 +32,7 @@ add_library(engine STATIC engine/src/Shader.cpp engine/src/Texture.cpp engine/sr
 
 
 target_include_directories(engine PUBLIC engine/include vendor) #public == anything that links engine also gets this include path // make libs in vendor be included in engine
-target_link_libraries(engine PUBLIC glad) #engine needs glad
+target_link_libraries(engine PUBLIC glad ma) #engine needs glad
 
 #final step:
 
@@ -40,9 +40,9 @@ target_link_libraries(engine PUBLIC glad) #engine needs glad
 add_executable(game game/src/main.cpp game/src/Pistol.cpp game/src/PlayingState.cpp game/src/ButterflyKnife.cpp
                game/src/TrafficLight.cpp game/src/TrafficLightEntity.cpp game/src/Server.cpp game/src/NetworkClient.cpp
                game/src/RoundItems.cpp game/src/StateManager.cpp game/src/MenuState.cpp game/src/textureStore.cpp 
-	       game/src/shaderStore.cpp)
+	       game/src/shaderStore.cpp game/src/FootstepSystem.cpp)
 # connect the game to everything it needs
-target_link_libraries(game PRIVATE engine glfw OpenGL::GL glm::glm enet) #the game needs: glad (GL loader), Open::GL (the actual GL lib),
+target_link_libraries(game PRIVATE engine glfw OpenGL::GL glm::glm enet ma) #the game needs: glad (GL loader), Open::GL (the actual GL lib),
 # glm::glm (math)
 # engine (for engine). engine includes glad so glad will be linked aswell
 # enet for networking
