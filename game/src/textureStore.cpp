@@ -23,7 +23,9 @@ void initTextures() {
   textureMap.emplace("trafficLightEntityAlbedoTex", Texture("TrafficLightEntityAlbedo.png"));
   textureMap.emplace("trafficLightEntityEmissiveTex",
                      Texture("TrafficLightEntityEmissive.png"));
-  textureMap.emplace("trafficLightEntityTexTex", Texture("trafficLightEntityTex.png"));
+  textureMap.emplace("trafficLightEntityTexTex",
+                     Texture("trafficLightEntityTex.png"));
+  textureMap.emplace("vignetteTex", Texture("vignette.png"));
 
   textureMap.emplace("missingTextureTex", Texture("missingTexture.png"));
   markTextureDeprecated("trafficLightEntityTexTex");

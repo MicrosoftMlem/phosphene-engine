@@ -91,14 +91,14 @@ void UIRenderer::drawCircle(float x, float y, float diameter, glm::vec4 color, i
 }
 
 
-void UIRenderer::drawImage(float xPos, float yPos, float scale, Texture texture, int screenWidth, int screenHeight) {
+void UIRenderer::drawImage(float xPos, float yPos, float scaleX, float scaleY, Texture texture, int screenWidth, int screenHeight) {
   textureShader.use();
 
       glm::mat4 projection = glm::ortho(0.0f, (float)screenWidth, (float)screenHeight, 0.0f, -1.0f, 1.0f);
 
       glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(xPos, yPos, 0.0f));
-    model = glm::scale(model, glm::vec3(texture.width * scale, texture.height * scale, 1.0f));
+    model = glm::scale(model, glm::vec3(texture.width * scaleX, texture.height * scaleY, 1.0f));
 
     glUniformMatrix4fv(glGetUniformLocation(textureShader.ID, "projection"), 1,
                        GL_FALSE, glm::value_ptr(projection));

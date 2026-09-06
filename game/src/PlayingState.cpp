@@ -148,8 +148,6 @@ void PlayingState::update(float deltaTime) {
       me.abilityInt = s.abilityItem;
       me.frozen = s.frozen;
 
-      std::cout << "This is client. Am I frozen?: " << me.frozen << "\n";
-
       // then replay everything the server hasnt seen yet:
       for (unsigned int seq = s.lastAppliedSequence + 1;
            seq < network.getNextSequence(); seq++) {
@@ -510,6 +508,24 @@ void PlayingState::render() {
                           h); // draw pip after (ontop)
   }
   //     end of temporary score pips
+
+  // draw frozen vignette:
+
+  Texture *vignetteTexture = getTexture("vignetteTex");
+  int texHeight = vignetteTexture->height;
+  int texWidth = vignetteTexture->width;
+
+  //bezel is the area to cut off
+  int bezel = 0;
+  texHeight -= bezel;
+  texWidth -= bezel;
+
+    float scaleWidth = (float)w / (float)texWidth;
+  float scaleHeight = (float)h / (float)texHeight;
+
+  if (me.frozen) {
+    uiRenderer.drawImage(-bezel, -bezel, scaleWidth, scaleHeight, *vignetteTexture, w, h);
+  }
 
   glEnable(GL_DEPTH_TEST); // re-enable it for the next frames 3d
   glDisable(

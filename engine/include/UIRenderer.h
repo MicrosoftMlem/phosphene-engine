@@ -11,7 +11,7 @@ public:
     void drawRect(float x, float y, float width, float height, glm::vec4 color, int screenWidth, int screenHeight);
     void drawFireRect(float x, float y, float width, float height, float time, float pixelSize, glm::vec3 color1, glm::vec3 color2, int screenWidth, int screenHeight);
     void drawCircle(float x, float y, float diameter, glm::vec4 color, int screenWidth, int screenHeight);
-  void drawImage(float xPos, float yPos, float scale, Texture texture, int screenWidth, int screenHeight);
+  void drawImage(float xPos, float yPos, float scaleX, float scaleY, Texture texture, int screenWidth, int screenHeight);
   
 private:
   Shader shader;

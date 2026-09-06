@@ -8,6 +8,7 @@ document.
 ### Added
 - New drawImage function in UIRenderer.
 - New width and height members in Texture class.
+- New red frozen vignette ui effect when player is frozen.	
 
 ## [0.3.1] - 2026-09-05
 

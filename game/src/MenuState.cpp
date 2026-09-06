@@ -24,5 +24,5 @@ void MenuState::render() {
     int w, h;
     glfwGetFramebufferSize(window, &w, &h);
   
-    uiRenderer.drawImage(40, 40, 1, testTex, w, h);
+    uiRenderer.drawImage(40, 40, 1, 1, testTex, w, h);
 }

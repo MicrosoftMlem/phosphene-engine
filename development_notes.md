@@ -27,7 +27,6 @@ between state swaps.
 Added drawImage to UIRenderer.
 Added width and height attributes to the Texture class.
 
-
 ** TODOS:
 
 *** TODO Implement a material class and refactor to use it. This is done to a good enough extent
