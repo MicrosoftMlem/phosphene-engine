@@ -9,7 +9,8 @@ build/
 compile_commands.json
 CMakeCache.txt
 CMakeFiles/
-vendor/
+# ok vendors back as im adding miniaudio
+#vendor/
 Research.md
 
 # I think make made lots of new files that might not be ignored

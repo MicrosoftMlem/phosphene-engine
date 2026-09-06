@@ -19,10 +19,16 @@ add_library(glad STATIC vendor/glad/src/glad.c) #static == baked into final exe
 target_include_directories(glad PUBLIC vendor/glad/include) #public == anything that links glad also gets this include path
 
 
+# ok then have miniaudio as a small static library:
+add_library(ma STATIC vendor/miniaudio/miniaudio.c)
+target_include_directories(ma PUBLIC vendor/miniaudio)
+# miniaudio also wants:
+target_link_libraries(ma PUBLIC pthread m dl)
+
 # engine:
 add_library(engine STATIC engine/src/Shader.cpp engine/src/Texture.cpp engine/src/Camera.cpp engine/src/Mesh.cpp
                             engine/src/GameObject.cpp engine/src/Simulation.cpp engine/src/Level.cpp engine/src/OBJLoader.cpp
-                            engine/src/UIRenderer.cpp engine/src/Bot.cpp) #compile engine files into libengine.a
+                            engine/src/UIRenderer.cpp engine/src/Bot.cpp engine/src/AudioInstance.cpp) #compile engine files into libengine.a
 
 
 target_include_directories(engine PUBLIC engine/include vendor) #public == anything that links engine also gets this include path // make libs in vendor be included in engine
